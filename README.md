@@ -9,6 +9,12 @@ ZeeTweak is an overhaul of the UI for the [Zeeweii DSO3D12 oscilloscope](http://
 - UI preferences are highly subjective - post an [Issue](https://github.com/taligentx/ZeeTweak/issues) or [Pull Request](https://github.com/taligentx/ZeeTweak/pulls) for what you'd like to see, there is plenty of room for improvement. Discussion and (especially) contributions are welcome!
 
 ## Release Notes
+- 3.1
+  - New: `zrle2bmp.py` tool to convert Zeeweii-custom RLE compressed images
+  - New: images from [@Dmitur](https://www.eevblog.com/forum/testgear/another-dsodmm-zeeweii-dso3d12-claimed-120mhz250msps/msg5789049/#msg5789049): sig. gen. numbers, trigger edge icon
+  - New: images for channel level icon, trigger icon
+  - Updated: measurement label background
+  - Updated: menu display setting for persistance relabeled from 1s to 3s based on measured fade time
 - 3.0
   - New bitmaps for most UI elements
   - Added image previews
@@ -22,10 +28,12 @@ ZeeTweak is an overhaul of the UI for the [Zeeweii DSO3D12 oscilloscope](http://
 
 ## Files
 The `Zeeweii_DSO3D12` directory contains:
-
- - `dso3d12_v3.0.6_III_mod_v3.0.fls` - an example firmware with all mods applied.
+ - `dso3d12_v3.0.6_III_mod_v3.1.fls` - an example firmware with all mods applied.
  - `images` - viewable files of the original and modified UI images.
  - `mods` - binary files of the original and modified data for use with [FLSTweak](https://github.com/taligentx/FLSTweak).
+
+The `tools` directory contains:
+ - `zrle2bmp.py` - converts Zeeweii's custom RLE compression used on some images to a standard RGB565 bitmap (example: boot logo)
 
 ## Mods
 The `mods` directory contains:
@@ -43,7 +51,7 @@ The `mods` directory contains:
     - Convert image to raw data: `$ magick image.png -depth 1 gray:image.bin`
   - 16bpp images:
     - Viewable as BMP files in `images`
-  - Thanks to [@Dmitur](https://www.eevblog.com/forum/testgear/another-dsodmm-zeeweii-dso3d12-claimed-120mhz250msps/msg5789049/#msg5789049) on the EEVBlog forums for locating and documenting these resources! See the post for additional info and mods (currently not part of this repo).
+  - Thanks to [@Dmitur](https://www.eevblog.com/forum/testgear/another-dsodmm-zeeweii-dso3d12-claimed-120mhz250msps/msg5789049/#msg5789049) on the EEVBlog forums for locating and documenting these resources! See the post for additional info.
 - `label_calib` - fixes typos for DMM calibration text
 - `label_measurements` - alters the measurements labels and matches the labels in `image_364864_mod.bin`
 - `label_normal` - fixes typo for the "Normal" trigger message
