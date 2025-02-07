@@ -1,7 +1,7 @@
 # ZeeTweak
 ZeeTweak is an overhaul of the UI for the [Zeeweii DSO3D12 oscilloscope](http://www.zeeweii.com/productinfo/dso3d12.html), including replacement fonts, most UI elements, and various fixes.
 
-![Zeeweii_DSO3D12_mod_v3.0](https://github.com/user-attachments/assets/5f8174e5-4002-4812-8711-748cdb3ddec5)
+![Zeeweii_DSO3D12_mod_v3.1](https://github.com/user-attachments/assets/88fa9dd7-0761-489b-bc0e-031cb9fce3c7)
 
 ## Notes
 - To customize the firmware, place the desired mod files in a directory and use [FLSTweak](https://github.com/taligentx/FLSTweak) to generate a new firmware file. See Flashing below to apply the firmware.
@@ -118,7 +118,7 @@ Original -> Mod:
 
 ![Menu-2-Trig](https://github.com/user-attachments/assets/5c6eea42-4e2f-42f1-bfda-f3129afa0cac)
 
-![Menu-3-Disp](https://github.com/user-attachments/assets/eabf23c9-7c53-4028-abdc-5331b000cc64)
+![Menu-3-Disp](https://github.com/user-attachments/assets/d7b78822-b35d-4301-950a-b6bfdcefd4bd)
 
 ![Menu-4-Set](https://github.com/user-attachments/assets/b4b66e35-e599-4e91-8ec5-d87bba995cb7)
 
