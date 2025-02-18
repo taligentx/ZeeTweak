@@ -6,7 +6,7 @@ ZeeTweak is an overhaul of the UI for the [Zeeweii DSO3D12 oscilloscope](http://
 ## Notes
 - To customize the firmware, place the desired mod files in a directory and use [FLSTweak](https://github.com/taligentx/FLSTweak) to generate a new firmware file. See Flashing below to apply the firmware.
 - The mods in this repo cover resources that are directly stored in the firmware (not part of the compiled code). It will take reverse engineering of the code to functionally change the UI, so the replacements here are a starting point for further work.
-- UI preferences are highly subjective - post an [Issue](https://github.com/taligentx/ZeeTweak/issues) or [Pull Request](https://github.com/taligentx/ZeeTweak/pulls) for what you'd like to see, there is plenty of room for improvement. Discussion and (especially) contributions are welcome!
+- Since UI preferences are highly subjective, post an [Issue](https://github.com/taligentx/ZeeTweak/issues) or [Pull Request](https://github.com/taligentx/ZeeTweak/pulls) for what you'd like to see - there is plenty of room for improvement. Discussion and (especially) contributions are welcome!
 
 ## Release Notes
 - 3.1
@@ -27,17 +27,27 @@ ZeeTweak is an overhaul of the UI for the [Zeeweii DSO3D12 oscilloscope](http://
   - Initial release
 
 ## Files
-The `Zeeweii_DSO3D12` directory contains:
- - `dso3d12_v3.0.6_III_mod_v3.1.fls` - an example firmware with all mods applied.
- - `images` - viewable files of the original and modified UI images.
- - `mods` - binary files of the original and modified data for use with [FLSTweak](https://github.com/taligentx/FLSTweak).
+- `Zeeweii_DSO3D12` directory:
+  - `dso3d12_v3.0.6_III_mod_v3.1.fls` - an example firmware with all mods applied.
+  - `images` - viewable files of the original and modified UI images.
+  - `mods` - binary files of the original and modified data for use with [FLSTweak](https://github.com/taligentx/FLSTweak).
 
-The `tools` directory contains:
- - `zrle2bmp.py` - converts Zeeweii's custom RLE compression used on some images to a standard RGB565 bitmap (example: boot logo)
+- `tools` directory:
+  - `zrle2bmp.py` - converts Zeeweii's custom RLE compression used on some images to a standard RGB565 bitmap (example: boot logo)
+
+- `disassembly` directory:
+  - `dso3d12_3.0.6_ghidra_v0.1.gar` - firmware project for [Ghidra](https://github.com/NationalSecurityAgency/ghidra).
+    - Install the [ghidra_csky_ck804](https://github.com/taligentx/ghidra_csky_ck804) plugin - I've forked the original plugin to add instructions seen in the firmware. Needs help to improve the disassembly and decompiler.
+    - Open the firmware project in Ghidra using File > Restore Project.
+  - `docs` directory:
+    - Note: The DSO3D12 scope uses the [Winner Micro W806](https://doc.winnermicro.net/w800/en/latest/soc_guides/index.html) MCU, containing a [Xuantie XT804 processor](https://www.xrvm.cn/community/download) (ck804ef with FPUv2 + DSPv2) based on the C-SKY v2 architecture.
+    - `C-SKY ISA User Guide 1.15.12 (2014)` - covers general + floating point instructions. 
+    - `Xuantie E804 User Manual 2.0 (2024)` - updated ISA + DSP instructions (original Chinese + machine translated English)
+    - `T-HEAD 800 Series ABI Standards Manual 2.2 (2021)` - processor information and pseudo-instructions
+    - `Xuantie CPU Software Development Guide V3.4 (2024)` - updated processor information (original Chinese + machine translated English)
 
 ## Mods
 The `mods` directory contains:
-
 - `font_large, font_small` - fonts covering ASCII characters 32-126 as 1-bit data.
   - [ImageMagick](https://imagemagick.org) can convert the raw data to a series of images:
       - `$ magick -depth 1 -size 8x13 gray:font_small_ref.bin font_small_ref.png`
@@ -51,7 +61,7 @@ The `mods` directory contains:
     - Convert image to raw data: `$ magick image.png -depth 1 gray:image.bin`
   - 16bpp images:
     - Viewable as BMP files in `images`
-  - Thanks to [@Dmitur](https://www.eevblog.com/forum/testgear/another-dsodmm-zeeweii-dso3d12-claimed-120mhz250msps/msg5789049/#msg5789049) on the EEVBlog forums for locating and documenting these resources! See the post for additional info.
+  - Thanks to [@Dmitur](https://www.eevblog.com/forum/testgear/another-dsodmm-zeeweii-dso3d12-claimed-120mhz250msps/msg5789049/#msg5789049) on the EEVBlog forums for locating and documenting these resources, and for permitting their addition to this repo! See the post for additional info.
 - `label_calib` - fixes typos for DMM calibration text
 - `label_measurements` - alters the measurements labels and matches the labels in `image_364864_mod.bin`
 - `label_normal` - fixes typo for the "Normal" trigger message
