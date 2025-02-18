@@ -41,7 +41,9 @@ ZeeTweak is an overhaul of the UI for the [Zeeweii DSO3D12 oscilloscope](http://
     - Open the firmware project in Ghidra using File > Restore Project.
   - `docs` directory:
     - Note: The DSO3D12 scope uses the [Winner Micro W806](https://doc.winnermicro.net/w800/en/latest/soc_guides/index.html) MCU, containing a [Xuantie XT804 processor](https://www.xrvm.cn/community/download) (ck804ef with FPUv2 + DSPv2) based on the C-SKY v2 architecture.
-    - `C-SKY ISA User Guide 1.15.12 (2014)` - covers general + floating point instructions. 
+    - Translations are Google and DeepL, both can be useful for the same document.
+    - `Winner Micro W80x Register Manual 2.1 (2020)` - MCU documentation including memory ranges to see things in Ghidra like UARTs, GPIO, etc. (original Chinese + machine translated English)
+    - `C-SKY ISA User Guide 1.15.12 (2014)` - covers general + floating point instructions
     - `Xuantie E804 User Manual 2.0 (2024)` - updated ISA + DSP instructions (original Chinese + machine translated English)
     - `T-HEAD 800 Series ABI Standards Manual 2.2 (2021)` - processor information and pseudo-instructions
     - `Xuantie CPU Software Development Guide V3.4 (2024)` - updated processor information (original Chinese + machine translated English)
