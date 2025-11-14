@@ -3,9 +3,10 @@ ZeeTweak is an overhaul of the UI for the [Zeeweii DSO3D12 oscilloscope](http://
 
 ![Zeeweii_DSO3D12_mod_v3.1](https://github.com/user-attachments/assets/88fa9dd7-0761-489b-bc0e-031cb9fce3c7)
 
-## Notes
-- The provided example firmware has all mods applied, see Flashing below to apply the firmware.
+The provided example firmware has all mods applied, see Flashing below to apply the firmware.
 - To customize the firmware, place the desired mod files in a directory and use [FLSTweak](https://github.com/taligentx/FLSTweak) to generate a new firmware file. For example, there are several home screen image options.
+
+## Notes
 - The mods in this repo cover resources that are directly stored in the firmware (not part of the compiled code). It will take reverse engineering of the code to functionally change the UI, so the replacements here are a starting point for further work.
 - Since UI preferences are highly subjective, post an [Issue](https://github.com/taligentx/ZeeTweak/issues) or [Pull Request](https://github.com/taligentx/ZeeTweak/pulls) for what you'd like to see - there is plenty of room for improvement. Discussion and (especially) contributions are welcome!
 
@@ -77,7 +78,8 @@ The `mods` directory contains:
 
 ## Flashing
 
-Linux/macOS/Windows: [wm-tools](https://github.com/taligentx/ZeeTweak/issues/3) by @rssdev10 - a flashing utility based on Winner Micro's tool that does not require installing Python or other extras. Note that the Linux and Windows versions are currently untested.
+Linux/macOS/Windows:
+ - [wm-tools](https://github.com/taligentx/ZeeTweak/issues/3) by @rssdev10 - a flashing utility based on Winner Micro's tool that does not require installing Python or other extras. Note that the Linux and Windows versions are currently untested.
 
 Linux/macOS:
   1. Download and extract the [WM IoT SDK](https://doc.winnermicro.net/download/version/).
@@ -118,8 +120,8 @@ Windows:
   6. Done! Release the power button.
   ![Flashing_DSO3D12_Upgrade_Tools](https://github.com/user-attachments/assets/0cf60add-3fdf-4c25-b316-f78c7475e515)
 
-## Home
-The home screen (accessed by pressing the power button once) is a 320x240 16bpp image in `image_153880`, which opens up the possibilities for modification. I've included a few different options as an example of customizing this UI.
+## Home screen images
+The home screen (accessed by pressing the power button once) is simply a full-color image (320x240 16bpp), which opens up the possibility to use any photo or image. I've included a few different options as an example of customizing this UI.
 
 Original -> Mod:
 
