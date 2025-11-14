@@ -4,11 +4,18 @@ ZeeTweak is an overhaul of the UI for the [Zeeweii DSO3D12 oscilloscope](http://
 ![Zeeweii_DSO3D12_mod_v3.1](https://github.com/user-attachments/assets/88fa9dd7-0761-489b-bc0e-031cb9fce3c7)
 
 ## Notes
-- To customize the firmware, place the desired mod files in a directory and use [FLSTweak](https://github.com/taligentx/FLSTweak) to generate a new firmware file. See Flashing below to apply the firmware.
+- The provided example firmware has all mods applied, see Flashing below to apply the firmware.
+- To customize the firmware, place the desired mod files in a directory and use [FLSTweak](https://github.com/taligentx/FLSTweak) to generate a new firmware file. For example, there are several home screen image options.
 - The mods in this repo cover resources that are directly stored in the firmware (not part of the compiled code). It will take reverse engineering of the code to functionally change the UI, so the replacements here are a starting point for further work.
 - Since UI preferences are highly subjective, post an [Issue](https://github.com/taligentx/ZeeTweak/issues) or [Pull Request](https://github.com/taligentx/ZeeTweak/pulls) for what you'd like to see - there is plenty of room for improvement. Discussion and (especially) contributions are welcome!
 
 ## Release Notes
+- 3.2
+  - New: Zeeweii firmware 3.0.7
+  - New: image for the new DMM side menu (press Menu in full-screen DMM mode)
+  - New: images for the new channel math menu (long-press Menu in scope mode)
+  - Updated: images for the DMM mode selection menu
+  - Updated: flashing with wm-tools
 - 3.1
   - New: `zrle2bmp.py` tool to convert Zeeweii-custom RLE compressed images
   - New: images from [@Dmitur](https://www.eevblog.com/forum/testgear/another-dsodmm-zeeweii-dso3d12-claimed-120mhz250msps/msg5789049/#msg5789049): sig. gen. numbers, trigger edge icon
@@ -28,7 +35,7 @@ ZeeTweak is an overhaul of the UI for the [Zeeweii DSO3D12 oscilloscope](http://
 
 ## Files
 - `Zeeweii_DSO3D12` directory:
-  - `dso3d12_v3.0.6_III_mod_v3.1.fls` - an example firmware with all mods applied.
+  - `dso3d12_v3.0.7_III_mod_v3.2.fls` - an example firmware with all mods applied.
   - `images` - viewable files of the original and modified UI images.
   - `mods` - binary files of the original and modified data for use with [FLSTweak](https://github.com/taligentx/FLSTweak).
 
@@ -69,6 +76,9 @@ The `mods` directory contains:
 - `label_normal` - fixes typo for the "Normal" trigger message
 
 ## Flashing
+
+Linux/macOS/Windows: [wm-tools](https://github.com/taligentx/ZeeTweak/issues/3) by @rssdev10 - a flashing utility based on Winner Micro's tool that does not require installing Python or other extras. Note that the Linux and Windows versions are currently untested.
+
 Linux/macOS:
   1. Download and extract the [WM IoT SDK](https://doc.winnermicro.net/download/version/).
   2. Install required packages - from the `wm_iot_sdk` directory:
@@ -85,7 +95,7 @@ Linux/macOS:
      ```
   5. From the `wm_iot_sdk/tools/wm/` directory, run `flash.py` with the serial port and firmware:
      ```
-     % python3 flash.py --port /dev/tty.wchusbserial1410 --image dso3d12_v3.0.6_III_mod.fls 
+     % python3 flash.py --port /dev/tty.wchusbserial1410 --image dso3d12_v3.0.7_III_mod.fls 
      connecting serial...
      serial connected
      trying reset device...
@@ -93,7 +103,7 @@ Linux/macOS:
      serial sync success
      trying baudrate 2000000...
      start download image...
-     download dso3d12_v3.0.6_III_mod.fls...
+     download dso3d12_v3.0.7_III_mod.fls...
      0% [##############################] 100%
      flash device complete
      ```
@@ -134,7 +144,11 @@ Original -> Mod:
 
 ![Menu-4-Set](https://github.com/user-attachments/assets/b4b66e35-e599-4e91-8ec5-d87bba995cb7)
 
+![Channel-Math](https://github.com/user-attachments/assets/f40aac02-9486-4718-a540-cb88ceda014b)
+
 ![DMM](https://github.com/user-attachments/assets/b55dcb04-fa1a-4637-8a89-d933af716a81)
+
+![DMM-Side-Menu](https://github.com/user-attachments/assets/f1d3ab39-7a5a-45a7-a2dd-bff42f9526fb)
 
 ![Custom](https://github.com/user-attachments/assets/c44d073f-3eee-49fe-9613-00ff49df1b4e)
 
