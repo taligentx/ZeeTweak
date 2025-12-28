@@ -26,6 +26,7 @@ The provided example firmware has all mods applied, see Flashing below to apply 
   - New: CH2 50% auto-set level to 0 (originally offset by a few pixels)
   - New: Generate waveform CSV files for other applications
   - New: Support for DSO2512G screenshot data files (requires [modified firmware](https://www.eevblog.com/forum/testgear/new-2ch-pocket-dsosg-sigpeak-dso2512g/))
+  - Updated: Ghidra project 0.3 - all functions are now labeled!
   - Fixed: Windows serial port handling
   - Fixed: Voltage calculations for probes x1/x100 modes
 - 4.0
