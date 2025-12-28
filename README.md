@@ -1,14 +1,14 @@
 # ZeeTweak
-ZeeTweak is a collection of firmware and UI changes for the [Zeeweii DSO3D12 oscilloscope](http://www.zeeweii.com/productinfo/dso3d12.html), including:
-  * Saved waveform download: Capture screenshot data via serial and render new waveform images + text reports
-  * Arbitrary signal generator waveforms
-  * UI overhaul: New fonts, replacement of most UI elements, screenshot counter repositioning
-  * New home screen graphics (with multiple home screen background options)
-  * Sample buffer download: Capture and extract the secret dump mode output that sends the complete buffer (up to 60k samples)
+ZeeTweak is a combination of firmware modifications and a companion `zeetweak.py` tool for the [Zeeweii DSO3D12 oscilloscope](http://www.zeeweii.com/productinfo/dso3d12.html), including:
+  * Saved waveform download: Capture screenshot data via serial and render new high quality screenshots, text reports, and CSV data for use with applications like [sigrok PulseView](https://sigrok.org/wiki/PulseView).
+  * Arbitrary signal generator waveforms: Add new waveforms to the firmware
+  * Graphics: New fonts, images, and home screen with multiple background options
+  * UI tweaks: Screenshot counter, CH2 50% auto-set level
+  * Sample buffer download: Capture and extract the secret buffer dump mode (up to 60k samples)
 
 ![Zeeweii_DSO3D12_mod_v3.1](https://github.com/user-attachments/assets/88fa9dd7-0761-489b-bc0e-031cb9fce3c7)
 
-ZeeTweak capture and render:
+Waveform capture and screenshot render:
 
 ![ZeeTweak_Screenshot_Capture](https://github.com/user-attachments/assets/3f2c1050-9e6e-4f96-8044-913bcf68042a)
 
@@ -17,10 +17,17 @@ The provided example firmware has all mods applied, see Flashing below to apply 
 
 ## Notes
 - Most UI mods in this repo cover resources that are directly stored in the firmware (not part of the compiled code), so images are altered but not functionally changed.
-    * With release 4.0, some mods are based on reverse engineering of the firmware code (screenshot transfer, arbitrary waveforms, screenshot counter repositioning), which opens up the possibility of more functional changes. See the `Ghidra` files section below.
+    * With release 4.x, some mods are based on reverse engineering of the firmware code (screenshot transfer, arbitrary waveforms, UI tweaks), which opens up the possibility of more functional changes. See the `Ghidra` files section below.
 - Since UI preferences are highly subjective, post an [Issue](https://github.com/taligentx/ZeeTweak/issues) or [Pull Request](https://github.com/taligentx/ZeeTweak/pulls) for what you'd like to see - there is plenty of room for improvement. Discussion and (especially) contributions are welcome!
 
 ## Release Notes
+- 4.1
+  - New: Cursors measurements for rendered screenshots
+  - New: CH2 50% auto-set level to 0 (originally offset by a few pixels)
+  - New: Generate waveform CSV files for other applications
+  - New: Support for DSO2512G screenshot data files (requires [modified firmware](https://www.eevblog.com/forum/testgear/new-2ch-pocket-dsosg-sigpeak-dso2512g/))
+  - Fixed: Windows serial port handling
+  - Fixed: Voltage calculations for probes x1/x100 modes
 - 4.0
   - New: `zeetweak.py`
       * Screenshot data capture and rendering to new images with matplotlib
@@ -52,21 +59,16 @@ The provided example firmware has all mods applied, see Flashing below to apply 
   - Initial release
 
 ## Files
-- `zeetweak.py` - Tool for screenshot capture, image/text report generation, arbitrary waveform generation, and buffer dump capture. See below for usage.
-  - Requirements: `pip install pyserial numpy pillow matplotlib`
-  - `zeetweak.sh` - Helper script if you need/want a Python virtual environment (as on macOS with [Homebrew](https://brew.sh)):
-      * `chmod +x zeetweak.sh` and then run with the same arguments as `zeetweak.py`.
-      * Required packages will be automatically installed.
+- `zeetweak.py` - Companion tool for screenshot capture, image/text report generation, arbitrary waveform generation, and buffer dump capture. See below for usage.
 
 - `Zeeweii_DSO3D12` directory:
-  - `dso3d12_v3.0.7_III_mod_v4.0.fls` - an example firmware with all mods applied.
-  - `images` - viewable files of the original and modified UI images.
-  - `mods` - binary files of the original and modified data for use with [FLSTweak](https://github.com/taligentx/FLSTweak), including additional optional mods (different signal generator waveforms, home screen backgrounds, etc).
+  - `dso3d12_v3.0.7_III_mod_v4.1.fls` - an example firmware with all mods applied.
+  - `images` - original and modified UI images.
+  - `mods` - binary patches for use with [FLSTweak](https://github.com/taligentx/FLSTweak), including customizable mods (different signal generator waveforms, home screen backgrounds, etc).
 
 - `Ghidra` directory:
   - `dso3d12_v3.0.7_ghidra_v0.2.gar` - reverse engineering project for [Ghidra](https://github.com/NationalSecurityAgency/ghidra).
     - This is a very early stage for the runtime firmware and currently includes defined function boundaries, memory addresses (embedded data and peripherals), labels for embedded data (images, strings), many SDK library functions with the SDK data types, and parts of the Zeeweii-specific code. Many labels are up for debate and pending verification.
-    - There is a lot of low-hanging fruit at the moment! There are plenty of functions/variables/ram data that are obvious and can be labeled with their correct definition - up to now, my focus has been on the Ghidra C-SKY extension and implementing the SDK library functions, so quite a bit of the Zeeweii-specific code is left to discover. Enjoy the hunt!
     - Usage:
       1. Install the [ghidra_csky_WinnerMicro](https://github.com/taligentx/ghidra_csky_WinnerMicro) extension - I've forked the original extension to add all C-SKY instructions seen in the Zeeweii firmware for complete disassembly and decompilation.
       2. Open the firmware project in Ghidra using File > Restore Project.
@@ -116,43 +118,62 @@ The provided example firmware has all mods applied, see Flashing below to apply 
   6. Done! Release the power button.
   ![Flashing_DSO3D12_Upgrade_Tools](https://github.com/user-attachments/assets/0cf60add-3fdf-4c25-b316-f78c7475e515)
 
+## `zeetweak.py` Setup
+  1. Install [Python](https://www.python.org).
+      - macOS: Installing from python.org or Homebrew can cause conflicts with the Apple-installed version. Consider [pyenv](https://github.com/pyenv/pyenv) or [uv](https://github.com/astral-sh/uv).
+  2. Install the required packages:
+      - macOS/Linux: `pip install pyserial numpy matplotlib`
+      - Windows: `py -m pip install pyserial numpy matplotlib`
+  3. Run the script with the serial port to capture screenshots/buffer dumps, or a file/directory to process existing data:
+      - macOS/Linux: `python zeetweak.py /dev/tty.usbserial-1410`
+      - Windows: `python zeetweak.py COM1`
 
 ## Screenshots Capture and Rendering 
-`screenshot_viewer_mod` is a code patch combining two features:
-  - Screenshot count repositioning - moves the image count to the upper right of the display, replacing the battery level display. The original firmware placed the count in the graticule, obscuring cursor measurements data and any waveforms below.
-    - Caveat: This replaces the total screenshot count (`1` instead of `1/63`). The extra code space has been repurposed for...
+`screenshot_viewer_mod` is a firmware patch combining two features:
+  - Screenshot count repositioning - moves the image count to the upper right of the display, replacing the battery level display.
+    - Caveat: This replaces the total screenshot count (displays `1` instead of `1/63`). The extra code space has been repurposed for...
 
-  - Screenshot data transfer - the scope will now transfer the waveform data and scope state/settings via serial when an image is viewed. Note that this is the data only - the scope uses the data to regenerate the displayed image and doesn't save the original screen as a bitmap image, etc.
-    - After capture, `zeetweak.py` will process and render a new image using the waveform data using matplotlib, and also generate a text report with the available data and measurements, including measurements that weren't originally part of the screenshot.
-    - Caveat: Some data (like cursor measurements and math) is freshly calculated by the scope when the screenshot is viewed instead of being stored. The script currently doesn't handle this - it's likely more useful to render the data in something like PyQtGraph for fully interactive cursors/math/inversion etc. The cursor positions, however, are stored and will be displayed in the image.
+  - Screenshot data download - the scope will now automatically transfer the waveform data and scope state/settings via serial when a screenshot is viewed.
+    - After capture, `zeetweak.py` will process and generate:
+        1. Waveform image: Uses scope data with [matplotlib](https://matplotlib.org) to build new, high quality screenshots.
+        2. Text report: Includes settings/status data and measurements, with extended data when using the `--debug` option.
+        3. CSV file: Structured waveform data for use with other applications.
+            - [sigrok PulseView](https://sigrok.org/wiki/PulseView) - select "Import comma-separated values", select the .csv file, then set "Column format specs" to "t,3a" for 1 channel or "t,6a" for 2 channels.
+    - Note: The scope doesn't save the original screenshot as a bitmap image, etc. Instead, it saves the waveform data and settings and regenerates the display as the screenshot.
+        - Some data (like channel math) is freshly calculated by the scope when the screenshot is viewed instead of being stored. The script currently doesn't handle this - it's likely more useful to render the data in something like PyQtGraph for fully interactive cursors/math/inversion etc.
     - If you prefer not to have the scope send this data, use the `screenshot_viewer_mod_count_reposition_only.bin` mod file instead.
+
   ### Usage
   1. Launch `zeetweak.py` with the scope's serial port:
      ```
-     % python3 zeetweak.py /dev/tty.usbserial-1410
+     % python zeetweak.py /dev/tty.usbserial-1410  # Windows: COM1, etc
      Waiting for /dev/tty.usbserial-1410... (Ctrl+C to cancel)
      ```
   2. Power on the scope (it may reset off when the serial port is initialized).
   3. Once the scope is connected, open the screenshot browser and open a saved waveform - the data will be transferred and processed automatically:
      ```
      Connected, open saved waveforms to trigger capture:
-     Saved data:  Zeeweii_Screenshot_20251216_202613.bin
-     Saved text:  Zeeweii_Screenshot_20251216_202613.txt
-     Saved image: Zeeweii_Screenshot_20251216_202613.png
+     Saved data:  Zeeweii_Screenshot_20251225_164225.bin
+     Saved CSV:   Zeeweii_Screenshot_20251225_164225.csv
+     Saved text:  Zeeweii_Screenshot_20251225_164225.txt
+     Saved image: Zeeweii_Screenshot_20251225_164225.png
      ```
+
   ### Options
   `zeetweak.py [-h] [-o OUTPUT] [--color1 COLOR1] [--color2 COLOR2] [--meas MEAS] [--trigline] [--title TITLE] [--datetime] [-w WIDTH] [--debug] source`
   * `source` - Specify the serial port of the scope, a filename (to re-process a previously saved .bin file), or a directory containing multiple saved .bin files to batch process.
   * `-o OUTPUT` - Specify a filename prefix for the output. If the source is a single file, this will be the entire filename.
   * `--color1, --color2` - Specify new channel 1 and channel 2 colors: `--color1="yellow" --color2="#ff00ff"`
   * `--meas` - Specify the measurement labels to display in the image (the text output will always show all measurements). By default, the tool will use the measurements displayed in the original screenshot.
-    * You can retroactively display all measurements, or select:
+    * You can retroactively display all measurements, or select individually:
       * `--meas="all"`
       * `--meas="Freq,PkPk,Avg,RMS,Amp,+Duty,+T,-T,T,Max,Min,Top,Base,-Duty"`
   * `--trigline` - Display a dashed line at the trigger line
+  * `--nocurs` - Disable drawing cursors and measurements
   * `--title TITLE` - Add a custom title to the image and text report.
   * `--datetime` - Add the current date and time to custom titles and filenames when processing single files or directories. Timestamp is always added to serial captured files.
   * `-w WIDTH` - Specify a width in pixels (default: `1650` for 150dpi)
+  * `--dso2512g_v1` and `--dso2512g_v2` - Generate screenshots, CSV, and text reports from DSO2512G scope data files. Requires [modified 1.x and 2.x firmware](https://www.eevblog.com/forum/testgear/new-2ch-pocket-dsosg-sigpeak-dso2512g/).
   * `--debug` - Adds extra debugging information during serial capture, including all scope state/settings data in the text report and a diff between sequential images at the console output to help identify additional scope data.
 
 ## Arbitrary Waveform Patterns
