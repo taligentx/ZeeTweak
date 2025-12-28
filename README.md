@@ -3,7 +3,7 @@ ZeeTweak is a combination of firmware modifications and a companion `zeetweak.py
   * Saved waveform download: Capture screenshot data via serial and render new high quality screenshots, text reports, and CSV data for use with applications like [sigrok PulseView](https://sigrok.org/wiki/PulseView).
   * Arbitrary signal generator waveforms: Add new waveforms to the firmware
   * Graphics: New fonts, images, and home screen with multiple background options
-  * UI tweaks: Screenshot counter, CH2 50% auto-set level
+  * UI tweaks: Screenshot counter repositioned, CH2 50% auto-set level centered
   * Sample buffer download: Capture and extract the secret buffer dump mode (up to 60k samples)
 
 ![Zeeweii_DSO3D12_mod_v3.1](https://github.com/user-attachments/assets/88fa9dd7-0761-489b-bc0e-031cb9fce3c7)
@@ -17,7 +17,7 @@ The provided example firmware has all mods applied, see Flashing below to apply 
 
 ## Notes
 - Most UI mods in this repo cover resources that are directly stored in the firmware (not part of the compiled code), so images are altered but not functionally changed.
-    * With release 4.x, some mods are based on reverse engineering of the firmware code (screenshot transfer, arbitrary waveforms, UI tweaks), which opens up the possibility of more functional changes. See the `Ghidra` files section below.
+- With release 4.x, some mods are based on reverse engineering of the firmware code (screenshot transfer, arbitrary waveforms, UI tweaks), which opens up the possibility of more functional changes. See the `Ghidra` files section below.
 - Since UI preferences are highly subjective, post an [Issue](https://github.com/taligentx/ZeeTweak/issues) or [Pull Request](https://github.com/taligentx/ZeeTweak/pulls) for what you'd like to see - there is plenty of room for improvement. Discussion and (especially) contributions are welcome!
 
 ## Release Notes
@@ -67,8 +67,8 @@ The provided example firmware has all mods applied, see Flashing below to apply 
   - `mods` - binary patches for use with [FLSTweak](https://github.com/taligentx/FLSTweak), including customizable mods (different signal generator waveforms, home screen backgrounds, etc).
 
 - `Ghidra` directory:
-  - `dso3d12_v3.0.7_ghidra_v0.2.gar` - reverse engineering project for [Ghidra](https://github.com/NationalSecurityAgency/ghidra).
-    - This is a very early stage for the runtime firmware and currently includes defined function boundaries, memory addresses (embedded data and peripherals), labels for embedded data (images, strings), many SDK library functions with the SDK data types, and parts of the Zeeweii-specific code. Many labels are up for debate and pending verification.
+  - `dso3d12_v3.0.7_ghidra_v0.3.gar` - reverse engineering project for [Ghidra](https://github.com/NationalSecurityAgency/ghidra).
+    - This is an early stage, with all functions labeled along with embedded data, peripherals and SDK library functions with the SDK data types. Labels and purposes are always up for debate, but it's far enough along to be able to understand how the entire firmware works and spot opportunities for modifications.
     - Usage:
       1. Install the [ghidra_csky_WinnerMicro](https://github.com/taligentx/ghidra_csky_WinnerMicro) extension - I've forked the original extension to add all C-SKY instructions seen in the Zeeweii firmware for complete disassembly and decompilation.
       2. Open the firmware project in Ghidra using File > Restore Project.
