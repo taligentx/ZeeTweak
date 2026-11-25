@@ -1,0 +1,464 @@
+# Ghidra-classified data units inside .text (literal pools, tables, padding).
+# Format: start end type  (end exclusive, hex payload addresses)
+0x08010562 0x0801058C  mixed(Alignment,pointer)
+0x080105D2 0x080105DC  mixed(Alignment,pointer)
+0x08010674 0x0801067C  pointer
+0x08010720 0x08010724  undefined4
+0x080108BE 0x080108C0  Alignment
+0x08010926 0x08010928  Alignment
+0x08010A42 0x08010A44  Alignment
+0x08010B56 0x08010B6C  mixed(Alignment,pointer,undefined4)
+0x08010F64 0x08010FB4  mixed(pointer,undefined4)
+0x08011092 0x08011094  Alignment
+0x080112D2 0x080112D8  mixed(Alignment,pointer)
+0x0801133A 0x0801133C  Alignment
+0x080113BA 0x080113BC  Alignment
+0x080113FE 0x08011400  Alignment
+0x0801147A 0x0801147C  Alignment
+0x080117FE 0x08011804  mixed(Alignment,pointer)
+0x08011B52 0x08011B58  mixed(Alignment,pointer)
+0x08011E86 0x08011E8C  mixed(Alignment,pointer)
+0x080121AC 0x080121B0  pointer
+0x080121DA 0x080121DC  Alignment
+0x0801249E 0x080124A0  Alignment
+0x08012508 0x0801250C  pointer
+0x08012708 0x0801270C  pointer
+0x0801281E 0x08012824  mixed(Alignment,pointer)
+0x08012A1A 0x08012A1C  Alignment
+0x08012AA6 0x08012AA8  Alignment
+0x08012AF2 0x08012AF4  Alignment
+0x08012B6C 0x08012B70  undefined4
+0x08012B86 0x08012B88  Alignment
+0x08012D16 0x08012D18  Alignment
+0x08012EBE 0x08012EC0  Alignment
+0x08012F8C 0x08012F90  pointer
+0x08012FA4 0x08012FA8  pointer
+0x08012FF2 0x08012FF4  Alignment
+0x08013008 0x08013010  mixed(pointer,undefined4)
+0x08013016 0x0801301C  mixed(Alignment,pointer)
+0x0801313A 0x0801313C  Alignment
+0x080131DC 0x080131E0  pointer
+0x08013422 0x08013428  mixed(Alignment,pointer)
+0x08013452 0x08013454  Alignment
+0x0801355A 0x0801355C  Alignment
+0x080135A2 0x080135A4  Alignment
+0x080135A6 0x080135A8  Alignment
+0x080136E8 0x080136EC  pointer
+0x0801377C 0x08013788  pointer
+0x080137F2 0x080137F8  mixed(Alignment,pointer)
+0x080137FE 0x08013804  mixed(Alignment,pointer)
+0x08013832 0x08013838  mixed(Alignment,pointer)
+0x08013852 0x08013858  mixed(Alignment,pointer)
+0x08013870 0x08013874  pointer
+0x08013CB2 0x08013CB4  Alignment
+0x08013CB6 0x08013CB8  Alignment
+0x08013CBA 0x08013CBC  Alignment
+0x08013F4A 0x08013F4C  Alignment
+0x08013F62 0x08013F64  Alignment
+0x08013F66 0x08013F68  Alignment
+0x08013F96 0x08013F98  Alignment
+0x0801406C 0x0801407C  mixed(pointer,undefined4)
+0x08014122 0x08014128  mixed(Alignment,pointer)
+0x08014194 0x08014198  pointer
+0x080142EA 0x080142F8  mixed(Alignment,pointer,undefined4)
+0x080143B8 0x080143C0  undefined4
+0x080143F2 0x080143F4  Alignment
+0x080144C8 0x080144D0  undefined4
+0x08014576 0x0801458C  mixed(Alignment,undefined4)
+0x0801458E 0x08014590  Alignment
+0x08014592 0x08014594  Alignment
+0x080146EE 0x080146F4  mixed(Alignment,undefined4)
+0x080147EE 0x080147F0  Alignment
+0x0801486A 0x0801486C  Alignment
+0x080148CA 0x080148CC  Alignment
+0x0801493E 0x08014940  Alignment
+0x0801498A 0x0801498C  Alignment
+0x08014A9E 0x08014AA0  Alignment
+0x08014B80 0x08014B84  undefined4
+0x08014BEA 0x08014BEC  Alignment
+0x08014CC6 0x08014CC8  Alignment
+0x08014CDA 0x08014CE8  mixed(Alignment,pointer,undefined4)
+0x080150C6 0x0801511C  mixed(Alignment,pointer,undefined *,undefined4)
+0x0801522A 0x0801522C  Alignment
+0x0801532A 0x08015330  mixed(Alignment,pointer)
+0x08015384 0x0801538C  pointer
+0x080154AC 0x080154BC  pointer
+0x0801552A 0x0801553C  mixed(Alignment,pointer)
+0x080155FE 0x08015610  mixed(Alignment,pointer)
+0x08015640 0x08015644  pointer
+0x08015672 0x08015678  mixed(Alignment,pointer)
+0x080156B2 0x080156C0  mixed(Alignment,pointer)
+0x0801575C 0x0801576C  pointer
+0x0801579A 0x080157A0  mixed(Alignment,pointer)
+0x080157CE 0x080157D4  mixed(Alignment,pointer)
+0x08015802 0x08015808  mixed(Alignment,pointer)
+0x0801595C 0x08015974  pointer
+0x08015A1E 0x08015A34  mixed(Alignment,pointer)
+0x08015B6A 0x08015B80  mixed(Alignment,pointer)
+0x08015C02 0x08015C14  mixed(Alignment,pointer)
+0x08015C98 0x08015CA8  pointer
+0x08015D2A 0x08015D3C  mixed(Alignment,pointer)
+0x08015DC0 0x08015DD0  pointer
+0x08015EEC 0x08015EF0  pointer
+0x08015FFA 0x08016034  mixed(Alignment,pointer,undefined4)
+0x080161D8 0x080161F8  mixed(pointer,undefined *)
+0x0801635A 0x08016368  mixed(Alignment,pointer)
+0x08016442 0x08016450  mixed(Alignment,pointer)
+0x0801651E 0x08016534  mixed(Alignment,pointer)
+0x08016606 0x08016618  mixed(Alignment,pointer)
+0x080166B8 0x080166CC  pointer
+0x08016842 0x08016848  mixed(Alignment,pointer)
+0x08016B52 0x08016B94  mixed(Alignment,pointer,undefined *,undefined4)
+0x08016BDA 0x08016BE4  mixed(Alignment,pointer)
+0x08016BFE 0x08016C04  mixed(Alignment,pointer)
+0x08016C38 0x08016C3C  pointer
+0x08016C76 0x08016C7C  mixed(Alignment,pointer)
+0x08016CA6 0x08016CB4  mixed(Alignment,pointer)
+0x08016CD6 0x08016CE0  mixed(Alignment,pointer)
+0x08016CEE 0x08016CF0  Alignment
+0x08016D06 0x08016D0C  mixed(Alignment,pointer)
+0x08016D16 0x08016D18  Alignment
+0x08016D34 0x08016D38  pointer
+0x08016EEE 0x08016F1C  mixed(Alignment,pointer,undefined *,undefined4)
+0x08016F38 0x08016F3C  pointer
+0x08016FAC 0x08016FB8  mixed(pointer,undefined4)
+0x08017006 0x08017010  mixed(Alignment,pointer)
+0x08017058 0x0801705C  pointer
+0x0801716E 0x08017190  mixed(Alignment,pointer,undefined4)
+0x080171E0 0x080171E4  pointer
+0x0801720C 0x08017210  pointer
+0x08017238 0x0801723C  pointer
+0x080172A6 0x080172B0  mixed(Alignment,pointer)
+0x080172D2 0x080172D4  Alignment
+0x080173CA 0x080173D4  mixed(Alignment,pointer)
+0x080173E2 0x080173E4  Alignment
+0x080173F2 0x080173F4  Alignment
+0x080174D0 0x080174D8  pointer
+0x08017500 0x08017510  pointer
+0x080176B6 0x080176CC  mixed(Alignment,pointer)
+0x0801782A 0x08017838  mixed(Alignment,pointer)
+0x08017970 0x08017974  pointer
+0x08017AD0 0x08017AD4  pointer
+0x08017CB4 0x08017CD0  pointer
+0x08017DF8 0x08017E2C  pointer
+0x08017E78 0x08017E88  pointer
+0x08017FEA 0x08017FFC  mixed(Alignment,pointer)
+0x08018146 0x08018160  mixed(Alignment,pointer)
+0x0801821C 0x08018234  pointer
+0x08018318 0x08018328  pointer
+0x0801840C 0x0801841C  pointer
+0x080185E0 0x080185FC  pointer
+0x0801871A 0x08018734  mixed(Alignment,pointer)
+0x0801875E 0x0801876C  mixed(Alignment,pointer)
+0x080188FC 0x0801890C  pointer
+0x08018A36 0x08018A38  Alignment
+0x08018BAC 0x08018BBC  pointer
+0x08018D08 0x08018D24  pointer
+0x08018D64 0x08018D68  pointer
+0x08018E9E 0x08018EB8  mixed(Alignment,pointer,undefined4)
+0x08018FC6 0x08018FDC  mixed(Alignment,pointer)
+0x08019060 0x08019078  mixed(pointer,undefined4)
+0x0801916A 0x08019190  mixed(Alignment,pointer)
+0x08019278 0x08019288  pointer
+0x080195FC 0x08019618  mixed(pointer,undefined4)
+0x08019834 0x08019848  undefined4
+0x08019AF8 0x08019B0C  pointer
+0x08019E76 0x08019E94  mixed(Alignment,pointer)
+0x0801A0E4 0x0801A0E8  pointer
+0x0801A45A 0x0801A480  mixed(Alignment,pointer,undefined4)
+0x0801A4C8 0x0801A4CC  pointer
+0x0801A8B0 0x0801A8E0  pointer
+0x0801A90E 0x0801A918  mixed(Alignment,pointer)
+0x0801ACC8 0x0801ACE8  pointer
+0x0801B39A 0x0801B3BC  mixed(Alignment,pointer,undefined *)
+0x0801B754 0x0801B784  mixed(pointer,undefined *)
+0x0801B8C2 0x0801B8D4  mixed(Alignment,undefined *)
+0x0801B93A 0x0801B950  mixed(Alignment,pointer)
+0x0801B96A 0x0801B974  mixed(Alignment,pointer)
+0x0801B9FE 0x0801BA08  mixed(Alignment,pointer)
+0x0801BAA0 0x0801BAA8  pointer
+0x0801BACA 0x0801BACC  Alignment
+0x0801BB00 0x0801BB08  pointer
+0x0801BB46 0x0801BB50  mixed(Alignment,pointer)
+0x0801BD22 0x0801BD34  mixed(Alignment,pointer)
+0x0801BDC2 0x0801BDEC  mixed(Alignment,pointer)
+0x0801BEA4 0x0801BEC4  pointer
+0x0801BF32 0x0801BF40  mixed(Alignment,pointer)
+0x0801C1E8 0x0801C204  pointer
+0x0801C38C 0x0801C39C  pointer
+0x0801C3E6 0x0801C3F0  mixed(Alignment,pointer)
+0x0801C4FE 0x0801C508  mixed(Alignment,pointer)
+0x0801C520 0x0801C524  pointer
+0x0801C696 0x0801C6C8  mixed(Alignment,pointer)
+0x0801C784 0x0801C7A8  pointer
+0x0801C8F8 0x0801C92C  mixed(pointer,undefined *)
+0x0801CAA2 0x0801CAAC  mixed(Alignment,pointer)
+0x0801CDDA 0x0801CE0C  mixed(Alignment,pointer)
+0x0801CE1E 0x0801CE24  mixed(Alignment,pointer)
+0x0801CF62 0x0801CF70  mixed(Alignment,pointer)
+0x0801D0C2 0x0801D0D0  mixed(Alignment,pointer)
+0x0801D2F4 0x0801D300  pointer
+0x0801D550 0x0801D55C  pointer
+0x0801D648 0x0801D64C  pointer
+0x0801D98A 0x0801D9A0  mixed(Alignment,pointer)
+0x0801DC82 0x0801DC8C  mixed(Alignment,pointer)
+0x0801DED4 0x0801DEDC  undefined4
+0x0801E250 0x0801E284  mixed(pointer,undefined *)
+0x0801E60C 0x0801E620  undefined *
+0x0801E928 0x0801E954  mixed(pointer,undefined *,undefined4)
+0x0801EA02 0x0801EA14  mixed(Alignment,pointer)
+0x0801ED3C 0x0801ED44  pointer
+0x0801EDFE 0x0801EE0C  mixed(Alignment,pointer,undefined4)
+0x0801EFDC 0x0801EFF0  pointer
+0x0801F00E 0x0801F014  mixed(Alignment,pointer)
+0x0801F218 0x0801F238  mixed(pointer,undefined4)
+0x0801F246 0x0801F24C  mixed(Alignment,pointer)
+0x0801F3C4 0x0801F3CC  pointer
+0x0801F3FE 0x0801F404  mixed(Alignment,pointer)
+0x0801F434 0x0801F440  pointer
+0x0801F48A 0x0801F490  mixed(Alignment,pointer)
+0x0801F57C 0x0801F584  pointer
+0x0801F5E8 0x0801F5F8  pointer
+0x0801F85C 0x0801F8AC  mixed(pointer,undefined *,undefined4)
+0x0801FB2C 0x0801FB48  pointer
+0x0801FB96 0x0801FB9C  mixed(Alignment,pointer)
+0x0801FD0A 0x0801FD34  mixed(Alignment,pointer,undefined *)
+0x0801FD42 0x0801FD48  mixed(Alignment,pointer)
+0x0802003E 0x08020090  mixed(Alignment,pointer)
+0x08020218 0x08020220  pointer
+0x0802062A 0x08020668  mixed(Alignment,pointer,undefined *)
+0x0802075A 0x08020770  mixed(Alignment,pointer)
+0x08020892 0x080208B4  mixed(Alignment,pointer)
+0x08020B66 0x08020BE8  mixed(Alignment,pointer,undefined *)
+0x08020D40 0x08020D5C  pointer
+0x08020F1E 0x08020F48  mixed(Alignment,pointer)
+0x08021250 0x080212BC  mixed(pointer,undefined *)
+0x080213F0 0x08021430  mixed(pointer,undefined *)
+0x08021496 0x080214A8  mixed(Alignment,pointer)
+0x0802165A 0x0802169C  mixed(Alignment,pointer,undefined *)
+0x0802191C 0x0802194C  mixed(pointer,undefined *,undefined4)
+0x08021980 0x08021988  pointer
+0x080219C8 0x080219CC  pointer
+0x080219EE 0x080219F4  mixed(Alignment,pointer)
+0x08021CCA 0x08021D04  mixed(Alignment,pointer,undefined *)
+0x08021FC0 0x08021FFC  mixed(pointer,undefined *)
+0x0802200E 0x08022014  mixed(Alignment,pointer)
+0x080222BC 0x080222E8  pointer
+0x080225CE 0x08022610  mixed(Alignment,pointer,undefined *)
+0x08022708 0x08022734  mixed(pointer,undefined4)
+0x0802281C 0x08022848  mixed(pointer,undefined4)
+0x08022B06 0x08022B74  mixed(Alignment,pointer)
+0x08022BA0 0x08022BA4  pointer
+0x08022E2E 0x08022E44  mixed(Alignment,pointer,undefined *)
+0x08023348 0x08023394  mixed(pointer,undefined *)
+0x080233E6 0x080233E8  Alignment
+0x080234C0 0x080234D4  pointer
+0x08023632 0x0802364C  mixed(Alignment,pointer)
+0x080236CC 0x080236DC  pointer
+0x080239BC 0x080239D0  mixed(pointer,undefined4)
+0x08023A5A 0x08023A88  mixed(Alignment,pointer)
+0x08023BBE 0x08023BDC  mixed(Alignment,pointer,undefined4)
+0x08023D84 0x08023DA0  mixed(pointer,undefined4)
+0x08023F48 0x08023F54  pointer
+0x080241BE 0x08024208  mixed(Alignment,pointer,undefined *)
+0x08024240 0x0802424C  pointer
+0x080244F2 0x0802451C  mixed(Alignment,pointer,undefined4)
+0x08024764 0x08024774  pointer
+0x08024AFC 0x08024B4C  mixed(pointer,undefined *)
+0x08024BBA 0x08024BCC  mixed(Alignment,pointer)
+0x08024ED0 0x08024F0C  mixed(pointer,undefined4)
+0x08024F44 0x08024F5C  mixed(pointer,undefined4)
+0x0802502A 0x0802503C  mixed(Alignment,pointer)
+0x080250DC 0x080250F0  mixed(pointer,undefined4)
+0x08025176 0x0802517C  mixed(Alignment,undefined4)
+0x0802518E 0x08025194  mixed(Alignment,pointer)
+0x080251E0 0x080251E4  undefined4
+0x08025280 0x08025290  pointer
+0x080252DC 0x080252E4  mixed(pointer,undefined4)
+0x0802538C 0x0802539C  pointer
+0x080253E0 0x080253E8  mixed(pointer,undefined4)
+0x080253FA 0x080253FC  Alignment
+0x0802540E 0x08025410  Alignment
+0x08025482 0x080254A0  mixed(Alignment,pointer)
+0x080254BA 0x080254C0  mixed(Alignment,pointer)
+0x0802564E 0x08025680  mixed(Alignment,pointer)
+0x080256DC 0x080256E8  pointer
+0x080256FC 0x08025700  pointer
+0x08025718 0x0802571C  pointer
+0x08025794 0x0802579C  pointer
+0x08025848 0x0802585C  pointer
+0x08025882 0x08025888  mixed(Alignment,pointer)
+0x080258AA 0x080258B0  mixed(Alignment,pointer)
+0x080258EE 0x080258F4  mixed(Alignment,pointer)
+0x08025934 0x08025938  pointer
+0x0802595A 0x08025960  mixed(Alignment,pointer)
+0x080259B4 0x080259B8  pointer
+0x080259C8 0x080259CC  pointer
+0x08025A66 0x08025A70  mixed(Alignment,pointer)
+0x08025C22 0x08025C54  mixed(Alignment,pointer)
+0x08025D20 0x08025D34  pointer
+0x08025F12 0x08025F20  mixed(Alignment,pointer,undefined4)
+0x08025F3E 0x08025F44  mixed(Alignment,pointer)
+0x08025F5A 0x08025F64  mixed(Alignment,pointer)
+0x08025F72 0x08025F78  mixed(Alignment,pointer)
+0x08025F8E 0x08025F98  mixed(Alignment,pointer)
+0x08026252 0x08026294  mixed(Alignment,pointer,undefined4)
+0x080262E0 0x080262E4  pointer
+0x08026324 0x0802632C  mixed(pointer,undefined4)
+0x080264C4 0x080264D0  mixed(pointer,undefined4)
+0x0802653A 0x08026548  mixed(Alignment,pointer,undefined4)
+0x080265B4 0x080265C0  mixed(pointer,undefined4)
+0x0802663C 0x08026648  mixed(pointer,undefined4)
+0x080266CA 0x080266D8  mixed(Alignment,pointer,undefined4)
+0x0802675A 0x08026768  mixed(Alignment,pointer,undefined4)
+0x080267A6 0x080267AC  mixed(Alignment,pointer)
+0x080267E8 0x080267F0  pointer
+0x08026832 0x08026840  mixed(Alignment,pointer)
+0x08026886 0x08026890  mixed(Alignment,pointer)
+0x080268B0 0x080268B8  pointer
+0x080268CA 0x080268D0  mixed(Alignment,pointer)
+0x080268DE 0x080268E4  mixed(Alignment,pointer)
+0x08026CF2 0x08026D30  mixed(Alignment,pointer,undefined *)
+0x08026E32 0x08026E44  mixed(Alignment,pointer)
+0x08026E98 0x08026EB4  pointer
+0x08026F8E 0x08026F94  mixed(Alignment,pointer)
+0x08027006 0x08027018  mixed(Alignment,pointer)
+0x08027026 0x08027028  Alignment
+0x0802703E 0x08027040  Alignment
+0x0802706E 0x08027070  Alignment
+0x0802711E 0x08027120  Alignment
+0x08027162 0x08027164  Alignment
+0x08027172 0x08027174  Alignment
+0x08027192 0x08027198  mixed(Alignment,pointer)
+0x080271A2 0x080271A8  mixed(Alignment,pointer)
+0x080271E4 0x080271E8  pointer
+0x0802722A 0x08027230  mixed(Alignment,pointer)
+0x0802723A 0x08027240  mixed(Alignment,pointer)
+0x08027300 0x08027304  pointer
+0x0802738A 0x08027390  mixed(Alignment,pointer)
+0x0802743E 0x08027444  mixed(Alignment,pointer)
+0x080274F0 0x080274F4  pointer
+0x08027594 0x08027598  pointer
+0x080275DE 0x080275E8  mixed(Alignment,pointer)
+0x08027656 0x08027660  mixed(Alignment,pointer)
+0x0802768C 0x08027690  pointer
+0x080276C4 0x080276C8  pointer
+0x080276F8 0x080276FC  pointer
+0x08027728 0x0802772C  pointer
+0x08027780 0x08027784  pointer
+0x0802784C 0x08027850  pointer
+0x08027D78 0x08027D80  pointer
+0x08027DA6 0x08027DA8  Alignment
+0x08027F00 0x08027F1C  mixed(pointer,undefined *)
+0x08027FE8 0x08027FF8  pointer
+0x0802806E 0x08028080  mixed(Alignment,pointer)
+0x0802821C 0x08028244  pointer
+0x080282E2 0x080282E4  Alignment
+0x080283B0 0x080283B8  pointer
+0x0802848E 0x08028498  mixed(Alignment,pointer)
+0x080284FE 0x08028500  Alignment
+0x080285D6 0x080285E4  mixed(Alignment,pointer)
+0x080286DE 0x08028700  mixed(Alignment,undefined4)
+0x080289A6 0x080289C4  mixed(Alignment,undefined4)
+0x08028C18 0x08028C24  mixed(pointer,undefined4)
+0x08028C5C 0x08028C60  pointer
+0x08028CFE 0x08028D1C  mixed(Alignment,undefined *)
+0x08028DBC 0x08028DD8  undefined *
+0x08028E3C 0x08028E44  pointer
+0x08028EFA 0x08028F18  mixed(Alignment,pointer,undefined *)
+0x080290F4 0x08029170  pointer
+0x08029260 0x08029274  pointer
+0x080293DA 0x080293E8  mixed(Alignment,pointer)
+0x08029588 0x080295BC  pointer
+0x08029654 0x08029668  pointer
+0x080296B0 0x080296B8  pointer
+0x0802987E 0x08029890  mixed(Alignment,pointer)
+0x08029976 0x08029988  mixed(Alignment,pointer)
+0x08029A30 0x08029A44  mixed(pointer,undefined *)
+0x08029C94 0x08029CF4  mixed(pointer,undefined *)
+0x08029D38 0x08029D40  pointer
+0x08029DCE 0x08029DDC  mixed(Alignment,pointer)
+0x08029EEE 0x08029F14  mixed(Alignment,pointer)
+0x08029F3C 0x08029F44  pointer
+0x08029F52 0x08029F58  mixed(Alignment,pointer)
+0x0802A016 0x0802A060  mixed(Alignment,pointer)
+0x0802A13E 0x0802A150  mixed(Alignment,pointer)
+0x0802A2AE 0x0802A2CC  mixed(Alignment,pointer,undefined *)
+0x0802A306 0x0802A310  mixed(Alignment,pointer)
+0x0802A390 0x0802A394  pointer
+0x0802A3DC 0x0802A3E8  pointer
+0x0802A494 0x0802A4A4  pointer
+0x0802A628 0x0802A630  pointer
+0x0802A6F0 0x0802A704  pointer
+0x0802AAEA 0x0802AB20  mixed(Alignment,pointer,undefined *)
+0x0802ACD8 0x0802ACF8  mixed(pointer,undefined *)
+0x0802AD38 0x0802AD44  pointer
+0x0802ADFC 0x0802AE0C  pointer
+0x0802B0B0 0x0802B0D0  pointer
+0x0802B274 0x0802B294  pointer
+0x0802B5E0 0x0802B61C  mixed(pointer,undefined *)
+0x0802B812 0x0802B834  mixed(Alignment,pointer)
+0x0802B89C 0x0802B8B8  pointer
+0x0802B8F6 0x0802B904  mixed(Alignment,pointer)
+0x0802BB72 0x0802BBA8  mixed(Alignment,pointer,undefined *)
+0x0802BC26 0x0802BC38  mixed(Alignment,pointer)
+0x0802BC80 0x0802BC90  pointer
+0x0802BCF4 0x0802BD04  pointer
+0x0802BDA4 0x0802BDB4  pointer
+0x0802BE36 0x0802BE3C  mixed(Alignment,pointer)
+0x0802BFC2 0x0802BFDC  mixed(Alignment,pointer,undefined *)
+0x0802C042 0x0802C044  Alignment
+0x0802C056 0x0802C058  Alignment
+0x0802C0E6 0x0802C0F8  mixed(Alignment,pointer)
+0x0802C130 0x0802C13C  pointer
+0x0802C162 0x0802C170  mixed(Alignment,pointer)
+0x0802C196 0x0802C1A4  mixed(Alignment,pointer)
+0x0802C1C6 0x0802C1CC  mixed(Alignment,pointer)
+0x0802C1EE 0x0802C1F4  mixed(Alignment,pointer)
+0x0802C200 0x0802C204  pointer
+0x0802C210 0x0802C214  pointer
+0x0802C2C0 0x0802C2C4  pointer
+0x0802C2F6 0x0802C2FC  mixed(Alignment,pointer)
+0x0802C334 0x0802C344  pointer
+0x0802C380 0x0802C388  pointer
+0x0802C3CE 0x0802C3D0  Alignment
+0x0802C41A 0x0802C420  mixed(Alignment,pointer)
+0x0802C446 0x0802C450  mixed(Alignment,pointer)
+0x0802C492 0x0802C498  mixed(Alignment,pointer)
+0x0802C53E 0x0802C544  mixed(Alignment,pointer)
+0x0802C560 0x0802C564  pointer
+0x0802C58E 0x0802C590  Alignment
+0x0802C5EE 0x0802C5F8  mixed(Alignment,pointer)
+0x0802C66C 0x0802C674  pointer
+0x0802C68A 0x0802C68C  Alignment
+0x0802C6A2 0x0802C6A4  Alignment
+0x0802C7C6 0x0802C7CC  mixed(Alignment,pointer)
+0x0802C814 0x0802C818  pointer
+0x0802C876 0x0802C88C  mixed(Alignment,pointer,undefined4)
+0x0802C94C 0x0802C954  mixed(pointer,undefined4)
+0x0802CB40 0x0802CB64  mixed(pointer,undefined *)
+0x0802CB9C 0x0802CBA0  pointer
+0x0802CBD2 0x0802CBDC  mixed(Alignment,pointer)
+0x0802CBFE 0x0802CC0C  mixed(Alignment,pointer)
+0x0802CC50 0x0802CC54  pointer
+0x0802CCEE 0x0802CD18  mixed(Alignment,pointer,undefined *,undefined4)
+0x0802CD92 0x0802CDAC  mixed(Alignment,pointer,undefined *)
+0x0802CDD2 0x0802CDDC  mixed(Alignment,pointer)
+0x0802CE46 0x0802CE58  mixed(Alignment,undefined *)
+0x0802CE7E 0x0802CE88  mixed(Alignment,pointer)
+0x0802CE98 0x0802CE9C  pointer
+0x0802CE9E 0x0802CEA0  Alignment
+0x0802CF3A 0x0802CF3C  Alignment
+0x0802D122 0x0802D124  Alignment
+0x0802D2BA 0x0802D2BC  Alignment
+0x0802D63A 0x0802D65C  mixed(Alignment,pointer,undefined4)
+0x0802D74E 0x0802D754  mixed(Alignment,pointer)
+0x0802DB54 0x0802DB90  undefined4
+0x0802DBDE 0x0802DBE0  Alignment
+0x0802DC22 0x0802DC2C  mixed(Alignment,pointer)
+0x0802DC86 0x0802DC8C  mixed(Alignment,pointer)
+0x0802DCA8 0x0802DCAC  pointer
+0x0802E666 0x0802E668  Alignment
+0x0802E67E 0x0802E684  mixed(Alignment,pointer)
+0x0802E6B2 0x0802E6B8  mixed(Alignment,pointer)
+0x0802E736 0x0802E760  mixed(Alignment,pointer,undefined)

@@ -1,0 +1,17 @@
+# Ghidra-classified packed byte[] blobs inside .rodata.
+# Payload-looking words inside these ranges are embedded data, not relocatable pointers.
+# Format: start end type  (end exclusive, hex payload addresses)
+0x0802E760 0x0802E7A8  byte[72]
+0x0802E970 0x0802F070  byte[1792]
+0x0802F4E4 0x08054CE4  byte[153600]
+0x080556B0 0x08055759  byte[169]
+0x080557A8 0x08055844  mixed(byte[36],byte[60])
+0x08055DE8 0x08057A48  mixed(byte[1004],byte[108],byte[12],byte[184],byte[20],byte[228],byte[244],byte[24],byte[28],byte[292],byte[32],byte[600],byte[64],byte[68],byte[76],byte[84],byte[88],byte[92])
+0x08057F80 0x08059460  mixed(byte[124],byte[144],byte[184],byte[356],byte[372],byte[420],byte[436],byte[452],byte[468],byte[76])
+0x080594F8 0x0805B718  mixed(byte[104],byte[1256],byte[196],byte[228],byte[24],byte[255],byte[3865],byte[708])
+0x0805DBF8 0x0805F5C8  mixed(byte[1224],byte[1236],byte[296],byte[3040],byte[812])
+0x0805F5D0 0x08061F88  mixed(byte[12],byte[140],byte[160],byte[20],byte[2120],byte[245],byte[24],byte[28],byte[4050],byte[405],byte[44],byte[68],byte[840],byte[84])
+0x08062048 0x08065DDC  mixed(byte[12],byte[1300],byte[1372],byte[1388],byte[1428],byte[1524],byte[1584],byte[1620],byte[1784],byte[28],byte[32],byte[44],byte[68])
+0x08065FCC 0x0806614C  mixed(byte[116],byte[152])
+0x080661C4 0x0807DDB4  mixed(byte[14216],byte[24832],byte[25296],byte[2720],byte[5368])
+0x0807E218 0x0807E3D8  byte[448]

@@ -1,41 +1,91 @@
 # ZeeTweak
-ZeeTweak is a combination of firmware modifications and a companion `zeetweak.py` tool for the [Zeeweii DSO3D12 oscilloscope](http://www.zeeweii.com/productinfo/dso3d12.html), including:
-  * Saved waveform download: Capture screenshot data via serial and render new high quality screenshots, text reports, and CSV data for use with applications like [sigrok PulseView](https://sigrok.org/wiki/PulseView).
-  * Arbitrary signal generator waveforms: Add new waveforms to the firmware
-  * Graphics: New fonts, images, and home screen with multiple background options
-  * UI tweaks: Screenshot counter repositioned, CH2 50% auto-set level centered
-  * Sample buffer download: Capture and extract the secret buffer dump mode (up to 60k samples)
+ZeeTweak is modified firmware and companion `zeetweak.py` tool for the [Zeeweii DSO3D12 oscilloscope](http://www.zeeweii.com/productinfo/dso3d12.html):
+  * **Waveform capture and download over USB**:
+    * Live waveforms: capture current running waveforms directly from the FPGA to render new, high resolution screenshots (up to 60k samples, single keypress on-demand).
+    * Saved waveforms: capture screenshot data saved on the scope to render new screenshots (up to 600 samples).
+    * Optional txt/csv sidecar files: export data for use with applications like [sigrok PulseView](https://sigrok.org/wiki/PulseView).
+  * **Live LCD screenshots**: capture the current 320x240 LCD display (all modes scope/DMM/signal generator).
+  * **New DMM serial protocol**: interface natively with apps that support FS9922-based multimeters:
+    * Software: [QtDMM](https://github.com/qtdmm/QtDMM), [UltraDMM](https://www.ultradmm.com), [Test Controller](https://lygte-info.dk/project/TestControllerIntro%20UK.html), etc.
+    * Compatible models: UNI-T UT61B/C/D, PeakTech 2025, Voltcraft VC-830/850, more.
+  * **Arbitrary waveforms**: Add new waveforms to the signal generator.
+  * **UI**: New fonts, images, home screen with multiple background options, fixes for UI quirks.
+  * **Targeted firmware flashing**: preserves the scope bootloader and only flashes the application for safe recovery.
+  * **Buildable and extendable source**: enables adding custom code or replacing existing code.
 
 ![Zeeweii_DSO3D12_mod_v3.1](https://github.com/user-attachments/assets/88fa9dd7-0761-489b-bc0e-031cb9fce3c7)
 
-Waveform capture and screenshot render:
+**Waveform capture and screenshot render:**
+![ZeeTweak_FPGA_Screenshot_Capture](https://github.com/user-attachments/assets/cae962c3-fe1a-4e35-b327-cf24baae9b16)
 
-![ZeeTweak_Screenshot_Capture](https://github.com/user-attachments/assets/3f2c1050-9e6e-4f96-8044-913bcf68042a)
+**Waveform capture vs saved screenshots:**
 
-The provided example firmware has all mods applied, see Flashing below to apply the firmware.
-- To customize the firmware, place the desired mod files in a directory and use [FLSTweak](https://github.com/taligentx/FLSTweak) to generate a new firmware file.
+FPGA-captured waveforms contain all original signal data and are processed to render a median trace, precise min/max envelope, and density grading.
+  * Saved screenshots (decimated 600 samples) vs live FPGA waveforms (up to 60k samples):
+![FPGA-Comparison](https://github.com/user-attachments/assets/07b1b016-aecb-40b6-bcbc-5c91d08a8583)
+
+**DMM interface with [QtDMM](https://github.com/qtdmm/QtDMM):**
+![QtDMM](https://github.com/user-attachments/assets/3a01312e-11eb-44e2-82f9-4d95f41ae651)
+
+## Quick Start
+  1. Download the latest release from [Releases](https://github.com/taligentx/ZeeTweak/releases).
+  2. Install the following [Python](https://www.python.org/downloads/latest/python3.14/) packages:
+      - macOS/Linux: `pip3 install pyserial numpy matplotlib`
+      - Windows: `py -m pip install pyserial numpy matplotlib`
+  3. Flash the firmware (see Flashing below for details): `python3 zeetweak.py ZeeTweak_v5.0.fls`
+  4. Run `python3 zeetweak.py` to automatically connect to the scope.
+  5. Done!
+     ```
+     Zeeweii DSO3D12 connected (1M baud)
+     Press 'c' to capture the live waveform, 'l' for an LCD screenshot,
+     or open a saved screenshot to download ('q' to quit):
+     ```
 
 ## Notes
-- Most UI mods in this repo cover resources that are directly stored in the firmware (not part of the compiled code), so images are altered but not functionally changed.
-- With release 4.x, some mods are based on reverse engineering of the firmware code (screenshot transfer, arbitrary waveforms, UI tweaks), which opens up the possibility of more functional changes. See the `Ghidra` files section below.
-- Since UI preferences are highly subjective, post an [Issue](https://github.com/taligentx/ZeeTweak/issues) or [Pull Request](https://github.com/taligentx/ZeeTweak/pulls) for what you'd like to see - there is plenty of room for improvement. Discussion and (especially) contributions are welcome!
+- This supports the `-III` generation DSO3D12 scopes and is based on version 3.0.7-III firmware.
+- Fully reversible by flashing the stock 3.0.7-III firmware.
+- Feel free to post an [Issue](https://github.com/taligentx/ZeeTweak/issues) or (especially) a [Pull Request](https://github.com/taligentx/ZeeTweak/pulls). Discussion and contributions are welcome!
+  - Also see the [EEVBlog forum thread](https://www.eevblog.com/forum/testgear/another-dsodmm-zeeweii-dso3d12-claimed-120mhz250msps/) for extensive discussion.
 
 ## Release Notes
+- 5.0
+  - `zeetweak.py`:
+    - New: Live waveform capture from FPGA
+    - New: Live LCD screenshots
+    - New: Built-in firmware flashing support
+    - New: Backup flash persistent data (scope UUID, settings, screenshots, etc)
+  - Firmware:
+    - New: Custom serial protocol for scope/host interface and data transfer
+    - New: Adjustable baud rate, default 1M baud
+    - New: 5x faster FPGA waveform capture with metadata (~650ms @ 1Mbaud)
+    - New: LCD framebuffer capture for live screenshots
+    - New: DMM fullscreen mode sends data as FS9922 with auto-switch to 2400 baud
+    - New: Signal generator in scope window mode supports up to 10MHz sine (previously 5MHz)
+    - New: DMM can be enabled in scope window mode while USB is connected
+    - New: Persistent flash data backup
+    - Fixed: CH2 50% auto-set level changing in stopped mode
+  - Reverse engineering:
+    - New: buildable and extendable source - see [source/README.md](source/README.md)
+    - Updated: Ghidra project 0.5
 - 4.1
-  - New: Cursors measurements for rendered screenshots
-  - New: CH2 50% auto-set level to 0 (originally offset by a few pixels)
-  - New: Generate waveform CSV files for other applications
-  - New: Support for DSO2512G screenshot data files (requires [modified firmware](https://www.eevblog.com/forum/testgear/new-2ch-pocket-dsosg-sigpeak-dso2512g/))
-  - Updated: Ghidra project 0.3 - all functions are now labeled!
-  - Fixed: Windows serial port handling
-  - Fixed: Voltage calculations for probes x1/x100 modes
+  - `zeetweak.py`:
+    - New: Cursors measurements for rendered screenshots
+    - New: Generate waveform CSV files for other applications
+    - New: Support for DSO2512G screenshot data files (requires [modified firmware](https://www.eevblog.com/forum/testgear/new-2ch-pocket-dsosg-sigpeak-dso2512g/))
+    - Fixed: Windows serial port handling
+    - Fixed: Voltage calculations for probes x1/x100 modes
+  - Firmware:
+    - New: CH2 50% auto-set level to 0 (originally offset by a few pixels)
+  - Reverse engineering:
+    - Updated: Ghidra project 0.3 - all functions are now identified
 - 4.0
   - New: `zeetweak.py`
-      * Screenshot data capture and rendering to new images with matplotlib
-      * Arbitrary signal generator waveforms
-      * Buffer dump capture (via secret debug mode)
-  - New: Screenshot counter UI repositioned, no longer obscures waveforms or cursor measurements
-  - Updated: Home screen icons
+      - Screenshot data capture and rendering to new images with matplotlib
+      - Arbitrary signal generator waveforms
+      - Buffer dump capture (via secret debug mode)
+  - Firmware:
+    - New: Screenshot counter UI repositioned, no longer obscures waveforms or cursor measurements
+    - Updated: Home screen icons
 - 3.2
   - New: Zeeweii firmware 3.0.7
   - New: image for the new DMM side menu (press Menu in full-screen DMM mode)
@@ -59,130 +109,70 @@ The provided example firmware has all mods applied, see Flashing below to apply 
 - 1.0
   - Initial release
 
-## Files
-- `zeetweak.py` - Companion tool for screenshot capture, image/text report generation, arbitrary waveform generation, and buffer dump capture. See below for usage.
-
-- `Zeeweii_DSO3D12` directory:
-  - `dso3d12_v3.0.7_III_mod_v4.1.fls` - an example firmware with all mods applied.
-  - `images` - original and modified UI images.
-  - `mods` - binary patches for use with [FLSTweak](https://github.com/taligentx/FLSTweak), including customizable mods (different signal generator waveforms, home screen backgrounds, etc).
-
-- `Ghidra` directory:
-  - `dso3d12_v3.0.7_ghidra_v0.3.gar` - reverse engineering project for [Ghidra](https://github.com/NationalSecurityAgency/ghidra).
-    - This is an early stage, with all functions labeled along with embedded data, peripherals and SDK library functions with the SDK data types. Labels and purposes are always up for debate, but it's far enough along to be able to understand how the entire firmware works and spot opportunities for modifications.
-    - Usage:
-      1. Install the [ghidra_csky_WinnerMicro](https://github.com/taligentx/ghidra_csky_WinnerMicro) extension - I've forked the original extension to add all C-SKY instructions seen in the Zeeweii firmware for complete disassembly and decompilation.
-      2. Open the firmware project in Ghidra using File > Restore Project.
-      3. Double-click the firmware image to launch CodeBrowser and view the disassembly and decompiler output.
-      4. Feedback appreciated! Feel free to [post an Issue](https://github.com/taligentx/ZeeTweak/issues) or in the [EEVBlog forum thread](https://www.eevblog.com/forum/testgear/another-dsodmm-zeeweii-dso3d12-claimed-120mhz250msps/).
-
 ## Flashing:
-### [wm-tools](https://github.com/taligentx/ZeeTweak/issues/3) (Linux/macOS/Windows):
-  * A flashing utility by @rssdev10 based on Winner Micro's tool that does not require installing Python or other extras. Note that the Linux and Windows versions are currently untested.
+  1. With the DSO3D12 turned off, connect via USB then press and hold the power button - the scope will enter a boot loop and enable the scope's serial port for flashing. Keep the power button pressed until flashing is complete.
+  2. Run `zeetweak.py` with the .fls firmware file: `% python3 zeetweak.py ZeeTweak_v5.0.fls`
+  3. Select the scope serial port and flash:
+     ```
+     Found image: ZeeTweak v5.0 (CRC verified)
+        1) /dev/cu.usbserial-1420   USB Serial  [CH340]  (default)
+     Port to flash [Enter = 1]:
+     Ready to flash, press Enter to continue or q to cancel:
+       [##############################] 100%  461/461 blocks
+     Flash completed successfully! Power cycle the scope to enable the USB/serial port.
+     ```
+  4. Done! Release the power button.
 
-### Winner Micro SDK: (Linux/macOS):
-  1. Download and extract the [WM IoT SDK](https://doc.winnermicro.net/download/version/).
-  2. Install required packages - from the `wm_iot_sdk` directory:
-     ```
-     python -m pip install --user -r tools/wm/requirements.txt
-     ```
-  3. With the DSO3D12 turned off, press and hold the power button - the scope will enter a boot loop and enable the scope's serial port to allow for flashing. Keep the power button pressed until flashing is complete.
-  4. Check the name of the serial port - on macOS, use the `tty.wchusbserial` device if two ports are detected:
-     ```
-     % ls /dev/tty*
-     /dev/tty.Bluetooth-Incoming-Port
-     /dev/tty.usbserial-1410  
-     /dev/tty.wchusbserial1410
-     ```
-  5. From the `wm_iot_sdk/tools/wm/` directory, run `flash.py` with the serial port and firmware:
-     ```
-     % python3 flash.py --port /dev/tty.wchusbserial1410 --image dso3d12_v3.0.7_III_mod.fls 
-     connecting serial...
-     serial connected
-     trying reset device...
-     wait serial sync...
-     serial sync success
-     trying baudrate 2000000...
-     start download image...
-     download dso3d12_v3.0.7_III_mod.fls...
-     0% [##############################] 100%
-     flash device complete
-     ```
-  6. Done! Release the power button.
+After flashing, power cycle the scope once - this makes the USB/serial port available for connection. Note that `zeetweak.py` only flashes the application, never the bootloader - this allows for safe recovery in case of any issues.
 
-### WM Upgrade Tools (Windows):
-  1. Download [Upgrade Tools](http://www.isme.fun/?log=blog&id=34).
-  2. Change the language to English from the top left menu (third option).
-  3. Set "Chip" to `W80X` and set the image to the firmware .fls file.
-  4. Press and hold the scope power button to enable the serial port until flashing is complete.
-  5. Select the new COM port, click "Open Serial", and then "Download" to flash.
-  6. Done! Release the power button.
-  ![Flashing_DSO3D12_Upgrade_Tools](https://github.com/user-attachments/assets/0cf60add-3fdf-4c25-b316-f78c7475e515)
+The firmware can also be flashed with other tools:
+  * [wm-tools](https://github.com/rssdev10/wm-tools) (Linux/macOS/Windows): A flashing utility and GUI by @rssdev10 that does not require installing Python.
+  * [Winner Micro SDK](https://doc.winnermicro.net/download/version/) (Linux/macOS)
+  * [WM Upgrade Tools](http://www.isme.fun/?log=blog&id=34) (Windows)
 
-## `zeetweak.py` Setup
-  1. Install [Python](https://www.python.org).
-      - macOS: Installing from python.org or Homebrew can cause conflicts with the Apple-installed version. Consider [pyenv](https://github.com/pyenv/pyenv) or [uv](https://github.com/astral-sh/uv).
-  2. Install the required packages:
-      - macOS/Linux: `pip install pyserial numpy matplotlib`
-      - Windows: `py -m pip install pyserial numpy matplotlib`
-  3. Run the script with the serial port to capture screenshots/buffer dumps, or a file/directory to process existing data:
-      - macOS/Linux: `python zeetweak.py /dev/tty.usbserial-1410`
-      - Windows: `python zeetweak.py COM1`
+## Options
+```
+zeetweak.py --options source
 
-## Screenshots Capture and Rendering 
-`screenshot_viewer_mod` is a firmware patch combining two features:
-  - Screenshot count repositioning - moves the image count to the upper right of the display, replacing the battery level display.
-    - Caveat: This replaces the total screenshot count (displays `1` instead of `1/63`). The extra code space has been repurposed for...
+  source                 Serial port, saved waveform .bin file/directory, .fls firmware to flash
 
-  - Screenshot data download - the scope will now automatically transfer the waveform data and scope state/settings via serial when a screenshot is viewed.
-    - After capture, `zeetweak.py` will process and generate:
-        1. Waveform image: Uses scope data with [matplotlib](https://matplotlib.org) to build new, high quality screenshots.
-        2. Text report: Includes settings/status data and measurements, with extended data when using the `--debug` option.
-        3. CSV file: Structured waveform data for use with other applications.
-            - [sigrok PulseView](https://sigrok.org/wiki/PulseView) - select "Import comma-separated values", select the .csv file, then set "Column format specs" to "t,3a" for 1 channel or "t,6a" for 2 channels.
-    - Note: The scope doesn't save the original screenshot as a bitmap image, etc. Instead, it saves the waveform data and settings and regenerates the display as the screenshot.
-        - Some data (like channel math) is freshly calculated by the scope when the screenshot is viewed instead of being stored. The script currently doesn't handle this - it's likely more useful to render the data in something like PyQtGraph for fully interactive cursors/math/inversion etc.
-    - If you prefer not to have the scope send this data, use the `screenshot_viewer_mod_count_reposition_only.bin` mod file instead.
+  --port PORT            Scope serial port
+  --baud BAUD            Serial port baud rate 115200-2M (default 1M)
+  --output OUTPUT        Output filename prefix
+  --sidecar              Write txt/csv data files
+  --width WIDTH          Output image width in pixels (default 1650)
+  --title TITLE          Display custom title
+  --meas MEAS            Display custom measurements (original: --meas, custom: --meas="freq,amp", default all)
+  --window START[:COUNT] Render part of the FPGA waveform capture instead of the scope's window
+  --trigline             Draw dashed line at trigger level
+  --nocurs               Disable drawing cursors and measurements
+  --datetime             Append current datetime to title and filenames
+  --color1 COLOR1        Override channel 1 color (--color1="yellow", --color1="#ff00ff")
+  --color2 COLOR2        Override channel 2 color
+  --waveform             Convert an image to a signal generator waveform
+  --scale                Scale signal generator waveform to full dynamic range (0-255)
+  --backup [FILE]        Backup flash persistent region
+  --debug                Display debug output
+```
 
-  ### Usage
-  1. Launch `zeetweak.py` with the scope's serial port:
-     ```
-     % python zeetweak.py /dev/tty.usbserial-1410  # Windows: COM1, etc
-     Waiting for /dev/tty.usbserial-1410... (Ctrl+C to cancel)
-     ```
-  2. Power on the scope (it may reset off when the serial port is initialized).
-  3. Once the scope is connected, open the screenshot browser and open a saved waveform - the data will be transferred and processed automatically:
-     ```
-     Connected, open saved waveforms to trigger capture:
-     Saved data:  Zeeweii_Screenshot_20251225_164225.bin
-     Saved CSV:   Zeeweii_Screenshot_20251225_164225.csv
-     Saved text:  Zeeweii_Screenshot_20251225_164225.txt
-     Saved image: Zeeweii_Screenshot_20251225_164225.png
-     ```
+## Files
+- `ZeeTweak_v5.0.fls` - modified firmware to flash to the scope.
 
-  ### Options
-  `zeetweak.py [-h] [-o OUTPUT] [--color1 COLOR1] [--color2 COLOR2] [--meas MEAS] [--trigline] [--title TITLE] [--datetime] [-w WIDTH] [--debug] source`
-  * `source` - Specify the serial port of the scope, a filename (to re-process a previously saved .bin file), or a directory containing multiple saved .bin files to batch process.
-  * `-o OUTPUT` - Specify a filename prefix for the output. If the source is a single file, this will be the entire filename.
-  * `--color1, --color2` - Specify new channel 1 and channel 2 colors: `--color1="yellow" --color2="#ff00ff"`
-  * `--meas` - Specify the measurement labels to display in the image (the text output will always show all measurements). By default, the tool will use the measurements displayed in the original screenshot.
-    * You can retroactively display all measurements, or select individually:
-      * `--meas="all"`
-      * `--meas="Freq,PkPk,Avg,RMS,Amp,+Duty,+T,-T,T,Max,Min,Top,Base,-Duty"`
-  * `--trigline` - Display a dashed line at the trigger line
-  * `--nocurs` - Disable drawing cursors and measurements
-  * `--title TITLE` - Add a custom title to the image and text report.
-  * `--datetime` - Add the current date and time to custom titles and filenames when processing single files or directories. Timestamp is always added to serial captured files.
-  * `-w WIDTH` - Specify a width in pixels (default: `1650` for 150dpi)
-  * `--dso2512g_v1` and `--dso2512g_v2` - Generate screenshots, CSV, and text reports from DSO2512G scope data files. Requires [modified 1.x and 2.x firmware](https://www.eevblog.com/forum/testgear/new-2ch-pocket-dsosg-sigpeak-dso2512g/).
-  * `--debug` - Adds extra debugging information during serial capture, including all scope state/settings data in the text report and a diff between sequential images at the console output to help identify additional scope data.
+- `zeetweak.py` - companion tool for waveform capture, image/text report generation, arbitrary waveform generation, and flashing.
+
+- `mods` - binary patches for the stock firmware, apply with [FLSTweak](https://github.com/taligentx/FLSTweak) to customize mods (different signal generator waveforms, home screen backgrounds, etc).
+
+- `resources`
+  - `images` - original and modified UI images.
+  - `dso3d12_v3.0.7_ghidra_project_v0.5.gar` - reverse engineering project for [Ghidra](https://github.com/NationalSecurityAgency/ghidra).
+    1. Install the [ghidra_csky_WinnerMicro](https://github.com/taligentx/ghidra_csky_WinnerMicro) extension - I've forked the original extension and added all C-SKY instructions seen in the Zeeweii firmware for complete disassembly and decompilation.
+    2. Open the firmware project in Ghidra using File > Restore Project.
+    3. Double-click the firmware image to launch CodeBrowser and view the disassembly and decompiler output.
+
+- `source` - buildable and extendable firmware source, see [source/README.md](source/README.md).
 
 ## Arbitrary Waveform Patterns
-`waveform_pattern_mod` - most signal generator waveforms are calculated, but the Sinc function (pattern `7`) is actually stored as hardcoded data. This makes it possible to replace it with other waveforms that fit in 256 bytes.
-  - Quirk: Possibly due to a compiler optimization, the starting sample (1 byte) is hardcoded into the firmware and the remaining 255 bytes are normal data. I've patched the starting sample to be `0x80` (the centerline).
-  - `zeetweak.py` can automatically convert images to waveforms, optionally scale to full dynamic range (0-255), adjust the waveform to align with the hardcoded starting sample, and produce the correctly sized mod data to flash.
-
-To generate a new waveform:
+Most signal generator waveforms are calculated, but the Sinc function (pattern `7`) is actually stored as hardcoded data. This makes it possible to replace it with other waveforms. To generate a new waveform:
   1. Create a 256x256 image (bmp, png, etc) with a black background and white waveform. The script will resize larger images and pick the bright pixels to use as waveform data.
   2. Run: `zeetweak.py --waveform my_waveform.png` (add `--scale` if needed)
   3. Use the output `waveform_pattern_mod.bin` file with [FLSTweak](https://github.com/taligentx/FLSTweak) to generate a new flash file.
@@ -192,47 +182,16 @@ A few included examples:
 
 mod_staircase / mod_am:
 
-![Waveform-Staircase-AM](https://github.com/user-attachments/assets/46732837-9e73-4f8b-af5a-4d5d773bd9d1)
+![Waveform-Staircase-AM](https://github.com/user-attachments/assets/56d3beb0-0b8e-41b9-8772-0a83ac9a4e3e)
 
 mod_ecg / mod_heart:
 
-![Waveform-ECG-Heart](https://github.com/user-attachments/assets/15cea14a-acb0-49ca-991e-71e58c209694)
-
-## Buffer Capture via Secret Dump Mode
-Reverse engineering the firmware revealed a function that reads out the FPGA sample buffer (up to 60k samples). This allows capturing higher resolution data that may be usable with other tools to analyze the data. To capture the data:
-  1. Launch `zeetweak.py` with the scope's serial port:
-     ```
-     % python3 zeetweak.py /dev/tty.usbserial-1410
-     Waiting for /dev/tty.usbserial-1410... (Ctrl+C to cancel)
-     ```
-  2. Power on the scope (it may reset off when the serial port is initialized).
-  3. Acquire the signal(s), then press `Stop` to freeze the sample buffer.
-  4. Press `Menu`, then `Stop` so that the channel 1 measurements menu is open.
-  5. Long-press `Save` - this kicks off the debug dump:
-     ```
-     Connected, open saved waveforms to trigger capture:
-     Receiving data...
-     Saved debug dump: Zeeweii_Debug_20251216_180138.bin (270024 bytes)
-     Extracted CH1: Zeeweii_Debug_20251216_180138-ch1.bin (60000 samples)
-     ```
-     2 channels:
-     ```
-     Receiving data...
-     Saved debug dump: Zeeweii_Debug_20251216_145708.bin (285042 bytes)
-     Extracted CH1: Zeeweii_Debug_20251216_145708-ch1.bin (30000 samples)
-     Extracted CH2: Zeeweii_Debug_20251216_145708-ch2.bin (30000 samples)
-     ```
-  6. I recommend also taking a screenshot of the stopped waveform and transferring it - the buffer dump does not include any scope state/settings data (v/div, timebase, etc).
-
-Notes:
-  - At full 60k sample depth, it can take up to 20s to transfer the data. At the fastest ranges (5ns, etc), the debug function switches to a fast mode with interpolation and sends 300 samples.
-  - The original debug dump converts the data to ASCII and prints it with spaces, line endings, etc. `zeetweak.py` extracts the data for each channel and saves as normal binary.
-  - It should be possible to modify the firmware to directly send hex data and also include the scope state/settings data, on the todo list.
+![Waveform-ECG-Heart](https://github.com/user-attachments/assets/a4c47713-9cf5-4bfe-94fa-a0f1feb4f005)
 
 ## Home Screen Images
-The home screen (accessed by pressing the power button once) is simply a full-color image (320x240 16bpp), which opens up the possibility to use any photo or image. I've included a few different options as an example of customizing this UI.
+The home screen (accessed by pressing the power button once) is simply a full-color image (320x240 16bpp RGB565), which opens up the possibility to use any photo or image. I've included a few different options as an example of customizing this UI.
 
-Original -> Mod:
+Original -> New:
 
 ![Home](https://github.com/user-attachments/assets/0b468aa4-55ff-4fe8-83e5-3cf91fa71cf3)
 
@@ -244,44 +203,36 @@ mod_smoke / mod_webb:
 
 ![Home-Smoke-Webb](https://github.com/user-attachments/assets/d0f2669c-4645-4731-81f6-66ec38950ae1)
 
-## Fonts, Images and Labels
-- `font_large, font_small` - fonts covering ASCII characters 32-126 as 1-bit data.
-  - [ImageMagick](https://imagemagick.org) can convert the raw data to a series of images:
-      - `$ magick -depth 1 -size 8x13 gray:font_small_ref.bin font_small_ref.png`
-      - `$ magick -depth 1 -size 16x16 gray:font_large_ref.bin font_large_ref.png`
+## UI Tweaks - Fonts and Images
+- `mods/font_large, font_small` - fonts covering ASCII characters 32-126 as 1-bit data. [ImageMagick](https://imagemagick.org) can convert the raw data to a series of images and also be used to generate new fonts:
+  - `$ magick -depth 1 -size 8x13 gray:font_small_ref.bin font_small_ref.png`
+  - `$ magick -depth 1 -size 16x16 gray:font_large_ref.bin font_large_ref.png`
   - Thanks to [@timschuerewegen](https://www.eevblog.com/forum/testgear/new-2ch-pocket-dsosg-sigpeak-dso2512g/msg5124096/#msg5124096) for developing the fonts (originally for the DSO2512G) and permitting their addition to this repo! Check out the Discord channel for a detailed discussion of Zeeweii firmware and reverse engineering work for the DSO2512G.
 
-- `image_XXXXXX` - images are either monochrome 1-bit per pixel or color 16-bits per pixel (RGB565 format); filenames are the offset of the data in the firmware file.
-  - 1bpp images:
-    - Viewable as PNG files in the `images` directory
-    - Convert raw data to image (must specify the size): `$ magick -depth 1 -size 67x198 gray:image_368172_ref.bin image_368172_ref.png`
-    - Convert image to raw data: `$ magick image.png -depth 1 gray:image.bin`
-  - 16bpp images:
-    - Viewable as BMP files in `images`
-  - Thanks to [@Dmitur](https://www.eevblog.com/forum/testgear/another-dsodmm-zeeweii-dso3d12-claimed-120mhz250msps/msg5789049/#msg5789049) on the EEVBlog forums for locating and documenting these resources, and for permitting their addition to this repo! See the post for additional info.
-- `label_calib` - fixes typos for DMM calibration text
-- `label_measurements` - alters the measurements labels and matches the labels in `image_364864_mod.bin`
-- `label_normal` - fixes typo for the "Normal" trigger message
+- `mods/image_XXXXXX` - images are either monochrome 1-bit PNG or color 16-bit RGB565 BMP; filenames are the offset of the data in the firmware file. ImageMagick can convert the 1-bit images:
+  - Convert raw data to image (must specify the size): `$ magick -depth 1 -size 67x198 gray:image_368172_ref.bin image_368172_ref.png`
+  - Convert image to raw data: `$ magick image.png -depth 1 gray:image.bin`
+  - Thanks to [@Dmitur](https://www.eevblog.com/forum/testgear/another-dsodmm-zeeweii-dso3d12-claimed-120mhz250msps/msg5789049/#msg5789049) for locating and documenting these resources, and for permitting their addition to this repo! See the post for additional info.
 
 ## Screenshots
-Original -> Mod:
+Original -> New:
 
-![Menu-1-Meas](https://github.com/user-attachments/assets/6470a733-dfbe-421f-bc9b-fdd3036129a0)
+![Menu-Comparison-Measure](https://github.com/user-attachments/assets/20faf2a1-d9a6-480d-85c6-a74f02b31df7)
 
-![Menu-2-Trig](https://github.com/user-attachments/assets/5c6eea42-4e2f-42f1-bfda-f3129afa0cac)
+![Menu-Comparison-Trig](https://github.com/user-attachments/assets/1bde81cb-ce6d-4d94-aee8-319c04118183)
 
-![Menu-3-Disp](https://github.com/user-attachments/assets/d7b78822-b35d-4301-950a-b6bfdcefd4bd)
+![Menu-Comparison-Disp](https://github.com/user-attachments/assets/0b95324f-32bc-4017-9aa8-e17c1c6442a8)
 
-![Menu-4-Set](https://github.com/user-attachments/assets/b4b66e35-e599-4e91-8ec5-d87bba995cb7)
+![Menu-Comparison-Set](https://github.com/user-attachments/assets/c46b1b98-a0ed-4e19-b20e-b6ad2292acf9)
 
-![Channel-Math](https://github.com/user-attachments/assets/f40aac02-9486-4718-a540-cb88ceda014b)
+![Menu-Comparison-Math](https://github.com/user-attachments/assets/7a111e48-3185-44f8-8950-8a6a1ead32ba)
 
-![DMM](https://github.com/user-attachments/assets/b55dcb04-fa1a-4637-8a89-d933af716a81)
+![Menu-Comparison-DMM1](https://github.com/user-attachments/assets/a45bac94-8c37-4435-be33-61fe54ae5645)
 
-![DMM-Side-Menu](https://github.com/user-attachments/assets/f1d3ab39-7a5a-45a7-a2dd-bff42f9526fb)
+![Menu-Comparison-DMM2](https://github.com/user-attachments/assets/f635e3a7-54dc-4735-bb9e-77c2837121fa)
 
-![Custom](https://github.com/user-attachments/assets/c44d073f-3eee-49fe-9613-00ff49df1b4e)
+![Menu-Comparison-Custom](https://github.com/user-attachments/assets/b8e4b46e-0f64-4b33-8b7b-4c98babe9ac4)
 
-## Resources
-- Firmware: Available through [Zeeweii's official support page](http://www.zeeweii.com/support.html)
+## Additional Resources
 - Discussion thread: [EEVBlog forums](https://www.eevblog.com/forum/testgear/another-dsodmm-zeeweii-dso3d12-claimed-120mhz250msps/) Another DSO+DMM - Zeeweii DSO3D12, claimed 120MHz/250MSps (june 2023)
+- [wm-tools](https://github.com/rssdev10/wm-tools) - flashing utility and desktop app for screenshots by @rssdev10

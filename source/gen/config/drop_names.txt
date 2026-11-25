@@ -1,0 +1,3 @@
+# ABS .set data symbols defined identically by SDK vectors.o (.bss)
+g_trapstackbase
+g_trap_sp

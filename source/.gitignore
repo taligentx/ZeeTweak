@@ -1,0 +1,65 @@
+# Prerequisites
+*.d
+
+# Object files
+*.o
+*.ko
+*.obj
+*.elf
+
+# Linker output
+*.ilk
+*.map
+*.exp
+
+# Precompiled Headers
+*.gch
+*.pch
+
+# Libraries
+*.lib
+*.la
+*.lo
+
+# Shared objects (inc. Windows DLLs)
+*.dll
+*.so
+*.so.*
+*.dylib
+
+# Executables
+*.out
+*.app
+*.i*86
+*.x86_64
+*.hex
+
+# Debug files
+*.dSYM/
+*.su
+*.idb
+*.pdb
+
+# Kernel Module Compile Results
+*.mod*
+*.cmd
+.vscode/
+.tmp_versions/
+
+# Build outputs
+/firmware/build/
+tools/W806/wm_tool
+tools/W806/W806_secboot.img
+__pycache__/
+
+# macOS metadata
+.DS_Store
+._*
+
+# Vendor
+/firmware/*.fls
+/firmware/*.img
+/src_zw/zw_app.s
+/src_zw/zw_rodata.s
+/src_zw/zw_rodata.bin
+/src_zw/zw_symbols.s

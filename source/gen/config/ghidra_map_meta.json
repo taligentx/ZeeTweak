@@ -1,0 +1,20 @@
+{
+  "format": "ghidra-range-maps-v1",
+  "payload_max": "0x0807E3D8",
+  "payload_min": "0x08010400",
+  "rodata_packed": {
+    "bytes": 308281,
+    "file": "config/ghidra_rodata_packed.txt",
+    "ranges": 14,
+    "sha256": "19ac1e0989f8c6952c51f911251bcf64426c64bb5323836981f7e0b829714b6d"
+  },
+  "source_format": "ghidra-code-map-v1",
+  "source_map": "build/ghidra_code_map.json",
+  "source_map_sha256": "14648d17d885e57eca61aa8e22d9a7777fca7d341f5da7aac23e4ed276e896b4",
+  "text_data": {
+    "bytes": 7794,
+    "file": "config/ghidra_text_data.txt",
+    "ranges": 462,
+    "sha256": "cc2f9cdc7d22518328daf5c8ab5d636f769b6e443f47890702b66cb14bb0dd0c"
+  }
+}

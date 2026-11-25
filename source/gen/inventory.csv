@@ -1,0 +1,1091 @@
+entry,body_start,body_end,size_bytes,instructions,name,comment
+0x8010500,0x8010500,0x8010561,98,45,Reset_Handler,"Reset_Handler, the reset entry point:
+- mtcr PSR, 0xE0000200: initialize processor status
+- SP = 0x2000138C: top of the 4 KB main stack
+- copy 0x100 bytes vector table 0x08010400 -> 0x20000000
+- copy 0x28C bytes .data 0x0807E14C -> 0x20000100
+- zero .bss 0x2000038C..0x20030C78
+- call SystemInit, board_init, main
+- br self at 0x08010560: hang if main returns.
+Literal pool at 0x08010564-0x0801058B. main is a bare-metal superloop; the FreeRTOS-style code present (vPortStartTask 0x080105E6, vTaskSwitchContext 0x0802E6B8) is never started and is dead except for the tspend IRQ path."
+0x801058c,0x801058c,0x80105cf,68,22,InterruptHandler,"InterruptHandler: common default trap handler, target of the vector-table thunk at 0x080105D0. Re-enables EE, saves the interrupted SP to g_trap_sp (0x2000158C), switches to the trap stack top 0x2000158C, builds a 0x48-byte frame with r0-r11, the interrupted SP/PC, LR, EPSR and EPC, then calls trap_c(frame). trap_c prints a register dump and spins forever, so any unexpected interrupt halts the device."
+0x80105d0,0x80105d0,0x80105d1,2,1,InterruptHandler,"Alternate entry point into the trap/interrupt handler: a 2-byte unconditional branch to
+InterruptHandler at 0x0801058c. The following literals hold the trap stack pointer 0x2000158c
+used by the handler prologue. Kept as a separate symbol because the vector table references it."
+0x80105dc,0x80105dc,0x80105e5,10,4,cpu_yield,"Yield the CPU from the current task (FreeRTOS/W806 port): writes 1 to the VIC TSPEND register
+(0xE000ED04), forcing an immediate PendSV context switch. 'rts; psrclr ie' in the following bytes are
+the compiler-emitted return that re-enables interrupts."
+0x80105e6,0x80105e6,0x8010617,50,16,vPortStartTask,"FreeRTOS port start: copies the first task's saved register frame from *pxCurrentTCB into
+the fixed C-SKY hardware exception-save area (0x0..0xD4 and 0x40/0x400 blocks) and returns the
+saved PC. The trap-return stub then resumes the task. Called once by vTaskStartScheduler."
+0x8010618,0x8010618,0x8010673,92,30,tspend_handler,"Context-switch trap (PendSV equivalent). Saves the interrupted C-SKY exception frame from
+the fixed save area (0x0, 0x40, 0x400) to the current task's stack, stores the new stack pointer
+in *pxCurrentTCB, calls vTaskSwitchContext, then copies the incoming task's saved frame back
+into the hardware save area and returns its PC for the trap return."
+0x801067c,0x801067c,0x801071f,164,65,sin,"fdlibm double sin().
+For |x| <= pi/4 it evaluates __kernel_sin directly; larger arguments go through argument
+reduction (__ieee754_rem_pio2) and the quadrant selects sine or cosine kernels. Ghidra prunes
+the reduction path as unreachable, so inspect the disassembly for that branch."
+0x8010724,0x8010724,0x80108bd,410,154,sqrt,"newlib double-precision sqrt().
+Handles negative/NaN/Inf/zero special cases, then computes the root with Newton-Raphson
+iterations built from the soft-float helpers (__adddf3, __subdf3, __muldf3, __divdf3)."
+0x80108c0,0x80108c0,0x8010925,102,40,__kernel_poly,"fdlibm polynomial evaluator (__kernel_poly): evaluates a coefficient table of degree
+param_2 at x (param_3/param_4) using the soft-float multiply/add helpers. Shared by the
+sine and cosine kernels."
+0x8010928,0x8010928,0x8010a41,282,114,__kernel_sin,"fdlibm sine kernel (__kernel_sin): evaluates sin(x) for |x| <= pi/4 with the standard
+13-term minimax polynomial, using __fixdfsi to split x into high and low parts.
+Called by sin() after argument reduction."
+0x8010a44,0x8010a44,0x8010b55,274,107,__kernel_cos,"fdlibm cosine kernel (__kernel_cos): evaluates cos(x) for |x| <= pi/4 with the standard
+polynomial, using __fixdfsi to split x into high and low parts.
+Called by cos() after argument reduction."
+0x8010b6c,0x8010b6c,0x8010c0b,160,64,_rem,"_rem: internal argument-reduction helper used by __ieee754_rem_pio2.
+Computes fmod(x, y) and adjusts the result into [-y/2, y/2] by adding or subtracting y.
+(Ghidra's prototype mangles the double arguments; y is carried in param_3/param_4.)"
+0x8010c0c,0x8010c0c,0x8010f63,856,328,__ieee754_rem_pio2,"fdlibm argument reduction (__ieee754_rem_pio2): reduces x modulo pi/2 and returns the
+quadrant index plus the reduced argument as two doubles for extra precision. Uses
+Cody-Waite constants for small x and the _rem Payne-Hanek path for large x.
+Called by sin/cos/tan before the polynomial kernels."
+0x8010fb4,0x8010fb4,0x8010fbb,8,3,sqrtf,"sqrtf: C library wrapper that calls __ieee754_sqrtf and returns its float result.
+(The decompiler mis-renders the call because __ieee754_sqrtf takes/returns floats in FP registers.)"
+0x8010fbc,0x8010fbc,0x8011091,214,76,__ieee754_sqrtf,"fdlibm single-precision square root (__ieee754_sqrtf) used by sqrtf(): bit-level
+Newton-Raphson implementation. Ghidra's decompiler prunes every block as unreachable due
+to the call/return convention, so inspect the disassembly; the result is returned in r0."
+0x8011094,0x8011094,0x80112d1,574,213,fmod,"newlib double fmod(x, y): returns x - n*y with n = truncated x/y, handling zero, Inf,
+NaN and |x| < |y| special cases. Scaling steps use the soft-float helpers.
+Used by floating-point formatting and user math."
+0x80112d8,0x80112d8,0x80112db,4,2,fabs,"fabs (double): clears bit 31 of the high word (r1) with bclri, returning |x|. Decompiled as
+an identity due to the ABI/sret modelling of 64-bit float returns."
+0x80112dc,0x80112dc,0x8011313,56,20,__fixunsdfsi,"Soft-float helper: convert double to unsigned int (__fixunsdfsi). For negative values it
+falls back to __fixdfsi; for non-negative it subtracts 2^31 (__subdf3 with 0x41E00000) before
+__fixdfsi so the result fits the unsigned range."
+0x8011314,0x8011314,0x8011339,38,13,__fixsfdi,"Soft-float helper: convert float to signed 64-bit (__fixsfdi). Positive values go through
+__fixunssfdi; negative values are converted to magnitude and negated. Argument/result are in FP
+registers, which is why the decompiler shows no explicit parameter."
+0x801133c,0x801133c,0x8011373,56,21,__fixdfdi,"Soft-float helper: convert double to signed 64-bit (__fixdfdi). Compares with 0 (__ltdf2),
+calls __fixunsdfdi for the magnitude and negates when the value is negative."
+0x8011374,0x8011374,0x80113b9,70,26,__fixunssfdi,"Soft-float helper: convert float to unsigned 64-bit (__fixunssfdi). Extends to double,
+converts the high 32-bit part with __fixunsdfsi, subtracts its double value, and converts the
+remainder to produce the low 32 bits."
+0x80113bc,0x80113bc,0x80113fd,66,25,__fixunsdfdi,"Soft-float helper: convert double to unsigned 64-bit (__fixunsdfdi). Splits the value:
+converts the high 32-bit part with __fixunsdfsi, removes it from the double, then converts the
+remainder for the low 32 bits."
+0x8011400,0x8011400,0x8011479,122,46,__floatdisf,"Soft-float helper: convert signed 64-bit integer to float (__floatdisf).
+Rounds the low 32 bits to nearest before splitting: adds 0x1fffff (+1 if low word non-zero) and,
+when rounding calls for it, clears the low 11 bits and sets bit 11 (0x800). Then computes
+double(high32)*2^32 + unsigned(low32) with __floatsidf/__muldf3/__floatunsidf/__adddf3 and narrows
+with __truncdfsf2."
+0x801147c,0x801147c,0x80114a3,40,15,__floatundidf,"Soft-float helper: convert unsigned 64-bit to double (__floatundidf). Computes
+double(high32)*2^32 + unsigned(low32) using __floatsidf/__muldf3/__floatunsidf/__adddf3."
+0x80114a4,0x80114a4,0x80117fd,858,337,__divdi3,"Compiler runtime helper: signed 64-bit division (int64 / int64).
+Leaf shift/subtract long-division loop using 32-bit register halves, with sign handling.
+Called for every 64-bit division in the firmware (e.g., 64-bit sample timing math)."
+0x8011804,0x8011804,0x8011b51,846,319,__moddi3,"Compiler runtime helper: signed 64-bit remainder (int64 % int64).
+Result takes the sign of the dividend; leaf shift/subtract implementation."
+0x8011b58,0x8011b58,0x8011e85,814,311,__udivdi3,"Compiler runtime helper: unsigned 64-bit division (uint64 / uint64).
+Leaf shift/subtract long-division loop over 32-bit register halves."
+0x8011e8c,0x8011e8c,0x80121ab,800,297,__umoddi3,"Compiler runtime helper: unsigned 64-bit remainder (uint64 % uint64).
+Leaf shift/subtract implementation."
+0x80121b0,0x80121b0,0x80121d9,42,18,__extendsfdf2,"Soft-float helper: extend float to double (__extendsfdf2). Unpacks the float, shifts the
+24-bit mantissa into the 53-bit double mantissa (<<30, >>2 split) and builds the double with
+__make_dp. W806 has no FPU, so this is used for every float-to-double conversion."
+0x80121dc,0x80121dc,0x801249d,706,256,_fpadd_parts,"Core routine of the newlib soft-float add/sub implementation.
+Takes two unpacked double values (param_1, param_2), handles NaN/Inf/zero/denormal
+special cases, aligns exponents and adds/subtracts the mantissas into param_3.
+Called by __adddf3 and __subdf3."
+0x80124a0,0x80124a0,0x80124cf,48,20,__adddf3,"Soft-float helper: double addition (__adddf3). Unpacks both operands, adds with
+_fpadd_parts, and repacks the newlib _fp_double structure with __pack_d."
+0x80124d0,0x80124d0,0x8012507,56,23,__subdf3,"Soft-float helper: double subtraction (__subdf3). Flips the sign bit of the second
+unpacked operand (_fp_double sign ^= 1) and adds via _fpadd_parts, then packs."
+0x801250c,0x801250c,0x8012707,508,205,__muldf3,"Soft-float double-precision multiply (__muldf3).
+Unpacks both operands with __unpack_d, multiplies the 32-bit mantissa halves using
+__muldi3, normalizes/rounds and packs the result with __pack_d. All double arithmetic in
+the firmware goes through these helpers because the W806 has no FPU."
+0x801270c,0x801270c,0x801281d,274,120,__divdf3,"Soft-float double-precision divide (__divdf3).
+Unpacks operands with __unpack_d, performs restoring division of the mantissas, normalizes/
+rounds and packs the result with __pack_d."
+0x8012824,0x8012824,0x801285b,56,25,__nedf2,"Soft-float comparison: != for doubles (__nedf2). Unpacks both operands and returns
+__fpcmp_parts_d's result (non-zero when unequal); NaN inputs are treated as unequal."
+0x801285c,0x801285c,0x801289b,64,29,__gtdf2,"Soft-float comparison: > for doubles (__gtdf2). Returns __fpcmp_parts_d, or -1 when
+either operand is NaN/unordered (C semantics: comparison false)."
+0x801289c,0x801289c,0x80128db,64,29,__gedf2,"Soft-float comparison: >= for doubles (__gedf2). Returns __fpcmp_parts_d, or -1 when
+either operand is NaN/unordered."
+0x80128dc,0x80128dc,0x8012913,56,25,__ltdf2,"Soft-float comparison: < for doubles (__ltdf2). Returns __fpcmp_parts_d's result,
+treating NaN/unordered comparisons as false."
+0x8012914,0x8012914,0x801297b,104,41,__floatsidf,"Soft-float helper: convert signed int to double (__floatsidf).
+Normalizes |value| with LZCOUNT, builds a newlib _fp_double struct (class 3 = normal, sign, exponent
+0x3c-lz, normalized mantissa) and packs it with __pack_d. Zero uses class 2. Custom LZCOUNT inline,
+not a stock newlib build."
+0x801297c,0x801297c,0x80129eb,112,47,__fixdfsi,"Soft-float helper: convert double to signed int (__fixdfsi).
+Unpacks the double, returns 0 for values below 1.0, saturates to 0x7fffffff (or 0x80000000 for
+negative) for large/inf/nan, otherwise shifts the 64-bit mantissa right by the exponent and applies
+the sign. No FPU on W806, so all doubles go through these newlib routines."
+0x80129ec,0x80129ec,0x8012a19,46,17,__make_dp,"Soft-float internals: build a double from the fields of a newlib _fp_double (class,
+sign, exponent, mantissa, extra) and pack it via __pack_d. Used by __extendsfdf2."
+0x8012a1c,0x8012a1c,0x8012a4f,52,21,__truncdfsf2,"Soft-float helper: truncate double to float (__truncdfsf2). Unpacks the double, builds the
+24-bit float mantissa (<<2 plus upper bits of the extra word, sticky OR when lower bits are
+lost) and packs with __make_fp."
+0x8012a50,0x8012a50,0x8012aa5,86,34,__floatunsidf,"Soft-float helper: convert unsigned int to double (__floatunsidf). Zero becomes class 2;
+otherwise normalizes with LZCOUNT and builds the _fp_double fields before __pack_d."
+0x8012aa8,0x8012aa8,0x8012af1,74,26,__muldi3,"64-bit integer multiply (__muldi3): operands in r0:r1 and r2:r3, 64-bit product returned
+in r0:r1. Uses 16-bit partial products with carry propagation. Ghidra decompiles only the low
+word because the high half is returned in r1 through the ABI."
+0x8012af4,0x8012af4,0x8012b6b,120,51,__unpack_f,"newlib soft-float helper __unpack_f: splits an IEEE-754 float into sign, unbiased exponent
+and 24-bit mantissa and classifies zero/denormal/Inf/NaN."
+0x8012b70,0x8012b70,0x8012b85,22,10,__make_fp,"Soft-float internals: __make_fp builds a newlib _fp_float structure from four words and
+packs it via __pack_f. Compiler helper for constructing floats in software (no FPU on W806);
+return value is passed back through the ABI float register."
+0x8012b88,0x8012b88,0x8012d15,398,148,__pack_d,"newlib soft-float helper __pack_d: packs an unpacked double (sign, exponent, 56-bit
+mantissa) back into IEEE-754 format with round-to-nearest-even, handling overflow,
+underflow, denormals, Inf and NaN."
+0x8012d18,0x8012d18,0x8012dfb,228,80,__unpack_d,"newlib soft-float helper __unpack_d: splits an IEEE-754 double into sign, unbiased
+exponent and 56-bit mantissa and classifies zero/denormal/Inf/NaN for the arithmetic
+routines."
+0x8012dfc,0x8012dfc,0x8012ebd,194,83,__fpcmp_parts_d,"newlib soft-float comparison of two unpacked doubles (__fpcmp_parts_d).
+Handles NaN, Inf and zero classes, then compares signs, exponents and mantissas. Used by
+the __eqdf2/__nedf2/__ltdf2/__gtdf2/__ledf2/__gedf2 helpers."
+0x8012ec0,0x8012ec0,0x8012f7f,192,73,__pack_f,"newlib soft-float helper __pack_f: packs an unpacked single-precision float back into
+IEEE-754 with rounding and denormal/overflow handling."
+0x8012f80,0x8012f80,0x8012f8b,12,5,putchar,"putchar: forward the character to putc() on stdout (FILE* from the C library). Used by printf
+when char output is enabled; _out_uart is the actual UART backend."
+0x8012f90,0x8012f90,0x8012fa3,20,8,puts,"puts: write the string plus a newline to stdout via fputs/fputc (C library). Used for the
+upgrade/boot status messages on the debug UART."
+0x8012fa8,0x8012fa8,0x8012ff1,74,30,fputs,"newlib fputs: writes the C string character by character through fputc inside the os_critical enter/exit hooks, stopping at the NUL terminator. Returns the number of characters written, or -1 when the stream or string pointer is NULL."
+0x8012ff4,0x8012ff4,0x8013007,20,9,rand,"rand: 32-bit LCG (state = state*0x41C64E6D + 0x3039) returning state>>1. State lives at
+0x200001b8; seed it with srand."
+0x8013010,0x8013010,0x8013015,6,3,srand,srand: seed the C library PRNG by storing the seed in the 32-bit rand_state global.
+0x801301c,0x801301c,0x80130bb,160,52,memset,"Standard C memset: fills __n bytes at __s with __c, aligning to a 4-byte boundary and then
+writing 16-byte blocks of a replicated 32-bit pattern for speed, with a byte tail."
+0x80130bc,0x80130bc,0x8013139,126,44,memcpy,"Standard C memcpy: copies __n bytes from __src to __dest. For word-aligned buffers it uses
+16-byte blocks and 4-byte words, then a byte tail; unaligned buffers use a byte copy."
+0x801313c,0x801313c,0x801313f,4,2,os_critical_open,OS critical-section open hook: stub returning 0 (W806 port does not implement it).
+0x8013140,0x8013140,0x8013143,4,2,os_critical_enter,"OS critical-section enter hook: stub returning 0. Real masking is done elsewhere (see the
+interrupt enable/disable helpers); this symbol satisfies the OS adaptation layer."
+0x8013144,0x8013144,0x8013147,4,2,os_critical_exit,OS critical-section exit hook: stub returning 0.
+0x8013148,0x8013148,0x801314b,4,2,os_critical_close,OS critical-section close hook: stub returning 0.
+0x801314c,0x801314c,0x8013153,8,3,putc,"putc: newlib stdio entry that forwards to fputc for the given stream (the W806 build
+implements character output directly over UART0)."
+0x8013154,0x8013154,0x8013307,436,124,HAL_GPIO_Init,"HAL GPIO initialization: walks the Pin mask in GPIO_InitTypeDef and programs direction, AF select/mux registers, pull-up/pull-down, interrupt mode and input-buffer enable in the W806 GPIO block. Called from zw_gpio_init_hw."
+0x8013308,0x8013308,0x801335f,88,32,HAL_GPIO_DeInit,"De-initialize GPIO pin(s): for each bit set in GPIO_Pin, clears the direction bit, enables
+the pull-up, disables pull-down, clears input-mode/source/edge selections and disables the pin
+interrupt. Leaves the pin as a pulled-up input in the reset-like state."
+0x8013360,0x8013360,0x8013421,194,84,HAL_UART_Init,"HAL UART initialization.
+Calls HAL_UART_MspInit when the handle is not yet initialized, programs the line control
+register (word length, parity, stop bits from Init), FIFO thresholds, enables TX/RX, and
+computes the baud-rate divisor from the APB clock (integer part in baud register, fractional
+part in bits 16+). Returns 0 on success, 1 for a null handle."
+0x8013428,0x8013428,0x8013451,42,19,HAL_UART_DeInit,"De-initialize a UART: if huart is non-NULL, clears the LC register clock/enable bits,
+calls HAL_UART_MspDeInit (pins/clocks/IRQ), resets the transfer counters and state, and returns
+HAL_OK; NULL returns HAL_ERROR."
+0x8013454,0x8013454,0x8013559,262,109,HAL_UART_Transmit,"HAL_UART_Transmit: blocking transmit of pData/Size bytes.
+Returns HAL_BUSY if the handle is busy, HAL_ERROR on null/zero arguments, otherwise waits
+for TX FIFO space (FIFOS & 0x3f < 0x20), writes bytes to TDW, and polls the FIFO empty at
+the end. Timeout is measured with HAL_GetTick (0xffffffff = wait forever); on expiry the
+handle is left idle and HAL_TIMEOUT is returned."
+0x801355c,0x801355c,0x80135a1,70,31,HAL_UART_Receive_IT,"Arm UART interrupt-driven receive: only when the UART is READY and RX is not busy;
+stores the buffer/size, sets RxState to BUSY_RX (0x22), enables the RXNE and error interrupt
+sources (INTS |= 0x1ec) and unmasks them (INTM &= ~0x1ec). Returns HAL_BUSY otherwise."
+0x80135a4,0x80135a4,0x80135a5,2,1,HAL_UART_TxCpltCallback,HAL UART transmit-complete weak callback: empty default implementation (no action).
+0x80135a8,0x80135a8,0x80136e7,320,123,HAL_UART_IRQHandler,"UART interrupt handler (WM HAL).
+Clears the interrupt status, then: on RX FIFO threshold/timeout reads bytes from RDW into
+huart->pRxBuffPtr, tracks RxXferCount and calls HAL_UART_RxCpltCallback when full; on TXE
+writes words from pTxBuffPtr to TDW while the FIFO has room; on TX complete disables the
+TX interrupt and calls HAL_UART_TxCpltCallback. UART4 has a special short-FIFO drain path."
+0x80136ec,0x80136ec,0x8013717,44,14,SystemClock_Get,Derive CPU/AHB/APB and peripheral clock frequencies from the PLL and divider fields of system register 0x40000E10. The decompiler shows truncated uRam00000e00 addresses; disassembly confirms 0x40000E10.
+0x8013718,0x8013718,0x801377b,100,34,HAL_InitTick,"Initialize the 1 ms HAL time base: programs the core timer (CORET) reload from the APB
+clock (0x1e0/divider * 1e6/1000 - 1), enables it (CSR=7), clears VIC pending/enable for the
+core timer IRQ and stores the tick priority. Called from HAL_Init."
+0x8013788,0x8013788,0x80137e7,96,36,SystemClock_Config,"Configure the W806 clock tree: writes 0x40000E00, 0x40000E08 = 0xF and the PLL/pre-divider fields in 0x40000E10, then starts the HAL tick via HAL_InitTick(7). The decompiler misrenders these as uRam00000e00 etc.; disassembly confirms 0x40000E00/08/10."
+0x80137e8,0x80137e8,0x80137f1,10,5,HAL_IncTick,HAL_IncTick: increment the 1 ms system tick counter. Called from the SysTick handler.
+0x80137f8,0x80137f8,0x80137fd,6,3,HAL_GetTick,"HAL_GetTick: return the 1 ms tick counter (uwTick), incremented by HAL_IncTick from SysTick."
+0x8013804,0x8013804,0x8013831,46,16,HAL_NVIC_SetPriority,"Set an interrupt priority: writes the 2-bit priority into the VIC priority register byte
+at 0xE000E400 (base+0x300) for IRQn, clearing the 8-bit field first. IRQn with the SEC bit
+set addresses the secure bank (byte shift by 8)."
+0x8013838,0x8013838,0x8013851,26,10,HAL_NVIC_EnableIRQ,"Enable an NVIC/VIC interrupt: writes 1<<(IRQn&31) to the VIC ISER bank (0xE000E100/104)
+and mirrors the same bit to the register at ISER+0x140, used by the W806 VIC to latch the
+enable/pending state."
+0x8013858,0x8013858,0x801386f,24,8,HAL_NVIC_DisableIRQ,"Disable an NVIC/VIC interrupt: writes 1<<(IRQn&31) to the VIC ICER bank
+(ISER0 0xE000E100 + (bank+0x20)*4, i.e. 0xE000E180/0xE000E184)."
+0x8013874,0x8013874,0x80138cb,88,31,SPI_Receive_IT,"SPI RX interrupt service helper: reads the RX FIFO level from STATUS bits 8-10 and moves
+up to four bytes per 32-bit RXDATA word into hspi->pRxBuffPtr, decrementing RxXferCount until
+the requested length or the FIFO is drained."
+0x80138cc,0x80138cc,0x801391f,84,38,HAL_SPI_Init,"Initialize the SPI controller: on reset takes the lock and calls HAL_SPI_MspInit, then
+programs CH_CFG (NSS, master enable), SPI_CFG (mode, clock polarity/phase, first bit), CLK_CFG
+(prescaler) from hspi->Init, enables the SPI (CH_CFG |= 4) and marks the handle READY."
+0x8013920,0x8013920,0x8013af7,472,147,HAL_SPI_Transmit,"Blocking SPI transmit in chunks of up to 0x1FF8 bytes: locks the handle, selects TX mode, fills the W806 SPI FIFO, waits for completion or timeout and returns HAL status. Used by the FPGA register and sample-transfer helpers."
+0x8013af8,0x8013af8,0x8013caf,440,147,HAL_SPI_Receive,"Blocking SPI receive in chunks of up to 0x1FF8 bytes: locks the handle, selects RX mode, drains the W806 SPI FIFO into the caller buffer, waits for completion or timeout and returns HAL status. Used by the FPGA register and sample-transfer helpers."
+0x8013cb0,0x8013cb0,0x8013cb1,2,1,HAL_SPI_TxCpltCallback,HAL SPI Tx-complete weak callback: empty default implementation (no action).
+0x8013cb4,0x8013cb4,0x8013cb5,2,1,HAL_SPI_RxCpltCallback,HAL SPI Rx-complete weak callback: empty default implementation (no action).
+0x8013cb8,0x8013cb8,0x8013cb9,2,1,HAL_SPI_TxRxCpltCallback,HAL SPI Tx/Rx-complete weak callback: empty default implementation (no action).
+0x8013cbc,0x8013cbc,0x8013f49,654,244,HAL_SPI_IRQHandler,"SPI interrupt handler for the low-speed SPI block (vector 44). Decodes the SPI status flags, services TX/RX/DMA completion and error conditions, invokes HAL_SPI_TxCpltCallback / RxCpltCallback / TxRxCpltCallback, and starts the next DMA transfer when needed."
+0x8013f4c,0x8013f4c,0x8013f61,22,10,HAL_WDG_DeInit,"De-initialize the watchdog: disable the WDG interrupt, clear the control register and write
+1 to CLR to reset the counter. Used before long flash upgrades."
+0x8013f64,0x8013f64,0x8013f65,2,1,HAL_WDG_MspInit,HAL watchdog MSP init hook: empty (the WDG needs no pin/clock setup on this SoC).
+0x8013f68,0x8013f68,0x8013f95,46,20,HAL_WDG_Init,"Initialize the watchdog: runs the MSP hook, computes the reload value as
+Init.Reload * APB clock from SystemClock_Get and writes LD, then enables the watchdog (CR=3)."
+0x8013f98,0x8013f98,0x801406b,212,75,__readByCMD,"Low-level flash read through the W806 flash controller.
+Programs the read command and address into flash_ctrl_cmd_info/flash_ctrl_addr, starts the
+operation by writing 0x100 to flash_ctrl_cmd_start, then copies the requested words via the
+flash read cache at PTR_flashRead_cache and fixes up unaligned leading bytes. (Ghidra loses
+the flash base register in the copy loop, so the source renders as address 0.)"
+0x801407c,0x801407c,0x8014121,166,60,flashRead,"Low-level serial-flash read with 256-byte cache at 0x20001590 (flashRead_cache).
+Reads an arbitrary address/length through the flash controller's read command, refilling
+one 256-byte page at a time. Backs settings, calibration and screenshot access."
+0x8014128,0x8014128,0x8014193,108,37,HAL_FLASH_Read,Reads SPI flash into buf. 'addr' is relative to flash base 0x08000000. Only called by HAL_FLASH_Read_Offset_0x96000.
+0x8014198,0x8014198,0x80142e9,338,106,HAL_FLASH_Write,"Writes a buffer to SPI flash. 'addr' is relative to flash base 0x08000000. Performs a read-modify-write per 4KB page: flashRead() the page into cache, merge 'len' bytes, erase the page, then program in 0x100-byte chunks. Only called by HAL_FLASH_Write_Offset_0x96000."
+0x80142f8,0x80142f8,0x80143b7,192,69,zw_flash_read_uuid,"Reads the 18-byte flash-chip signature (manufacturer/length/device ID) with flash
+controller command 0x2C09F. main() compares it with the factory record at 0x08096000
+and halts on mismatch (yellow screen) to detect a different flash chip/board."
+0x80143c0,0x80143c0,0x80143f1,50,21,HAL_ADC_Start,"Start an ADC conversion: writes the channel selection into ANA_CR, clears both interrupt
+flags (IF=3), then sets the channel plus enable bits (3) in ANA_CR and unlocks the handle."
+0x80143f4,0x80143f4,0x80144c7,212,83,HAL_ADC_Init,"HAL ADC initialization.
+Enables the ADC clock, programs the ADC clock divider from the APB clock and Init.freq,
+configures the PGA (gain 3) and analog bias registers, then calibrates by polling four
+conversions and loading the trim value from the chip information block at 0x200 into the
+offset field before leaving the ADC enabled."
+0x80144d0,0x80144d0,0x8014575,166,60,HAL_ADC_GET_INPUT_VOLTAGE,"HAL_ADC_GET_INPUT_VOLTAGE: performs 4 ADC conversions (starting the ADC if needed),
+restores the analog block and converts the trim-corrected raw value
+((info-block 0x200 value) - hadc->offset) to a voltage in millivolts using double scaling
+and __fixdfsi. Used by the battery monitor."
+0x801458c,0x801458c,0x801458d,2,1,HAL_ADC_ConvCpltCallback,HAL ADC conversion-complete weak callback: empty default implementation (no action).
+0x8014590,0x8014590,0x8014591,2,1,HAL_ADC_CompareCallback,HAL ADC analog-watchdog compare weak callback: empty default implementation (no action).
+0x8014594,0x8014594,0x80145db,72,26,HAL_ADC_IRQHandler,"ADC interrupt service: if the conversion-complete interrupt is enabled and flag 1 is set,
+clears it and calls HAL_ADC_ConvCpltCallback; if the analog-watchdog interrupt is enabled and
+flag 2 is set, clears it and calls HAL_ADC_CompareCallback."
+0x80145dc,0x80145dc,0x80146ed,274,114,__PWM_OutMode_Config,"Configures a PWM channel output mode (OutMode):
+0 = output disabled (clears complementary and channel enable bits),
+1 = channel output enabled (sets CR bit channel/2+0xe),
+2 = complementary/PWM output with dead time (programs DTCR for channel 0/2),
+3 = force output low (CR bit 6),
+4 = set brake bit for the channel. Returns HAL_OK."
+0x80146f4,0x80146f4,0x8014727,52,23,__PWM_CountType_Config,"PWM counter-mode configuration: channels 0-3 write CounterMode into CR bits
+[(Channel+8)*2, +8); channel 4 writes bits [5:3] of CH4CR2 (up/down/center-aligned mode)."
+0x8014728,0x8014728,0x80147ed,198,87,__PWM_Freq_Config,"__PWM_Freq_Config: sets the prescaler and period for a PWM channel
+(hpwm->Channel 0..4) by writing CLKDIV01/CLKDIV23/PERIOD or CH4CR1, preserving the fields
+belonging to the other channels. Returns HAL_OK."
+0x80147f0,0x80147f0,0x8014869,122,56,__PWM_Duty_Config,"Program an 8-bit PWM compare (duty) value for a channel.
+Channel 0 -> CMPDAT[7:0], 1 -> CMPDAT[15:8], 2 -> CMPDAT[31:16], 3 -> CMPDAT[31:24]
+(mask 0x7fffff first) and channel 4 -> CH4CR2[15:8]. All other channel numbers are ignored.
+Always returns HAL_OK."
+0x801486c,0x801486c,0x801489b,48,22,__PWM_AutoReload_Config,"PWM auto-reload preload configuration: channels 0-3 set CR bit (Channel+8); channel 4
+sets bit 1 of CH4CR2. Enables buffering of the auto-reload register on the next update."
+0x801489c,0x801489c,0x80148c9,46,21,__PWM_OutInverse_Config,"PWM output-inverse configuration: channels 0-3 set CR bit (Channel+2); channel 4 sets
+bit 0 of CH4CR2. Inverts the corresponding PWM output polarity."
+0x80148cc,0x80148cc,0x801493d,114,48,HAL_PWM_Init,"Initialize a PWM channel from hpwm->Init: calls HAL_PWM_MspInit, then configures output
+mode, counter mode, frequency (prescaler/period), duty, auto-reload preload and output inverse;
+finally clears the break/dead-time bit (CR bit 12 for channel 0, CH4CR3 bit 2 for channel 4)."
+0x8014940,0x8014940,0x801495b,28,12,HAL_PWM_Start,"Start a PWM channel: if hpwm is non-NULL, sets bit (27+Channel) in the PWM instance
+control register (offset +8) and returns HAL_OK; NULL returns HAL_ERROR."
+0x801495c,0x801495c,0x8014977,28,13,HAL_PWM_Stop,"Stop a PWM channel: if hpwm is non-NULL, clears bit (27+Channel) in the PWM instance
+control register (offset +8) and returns HAL_OK; NULL returns HAL_ERROR."
+0x8014978,0x8014978,0x8014989,18,7,HAL_PWM_Duty_Set,"HAL PWM duty-cycle setter: if hpwm is NULL returns HAL_ERROR; otherwise forwards
+(hpwm, Channel, Pulse) unchanged to __PWM_Duty_Config and returns HAL_OK. Kept as a thin HAL
+wrapper so callers (backlight, siggen, DMM bias) share the same null check."
+0x801498c,0x801498c,0x8014a9d,274,88,DMA_SetConfig,"Programs a DMA channel for a transfer: clears the channel's interrupt flags, then
+according to Init.Mode writes source/destination/word-length registers for normal mode
+(0), linked-descriptor double-buffer mode (split length into two descriptors, mode != 1)
+or auto-reload/ring mode (1, sets SA/DA/SWA/DWA/WLEN with source/destination wrap)."
+0x8014aa0,0x8014aa0,0x8014b7f,224,86,HAL_DMA_Init,"HAL DMA initialization.
+Derives the channel index from the instance address, resets CR2/MODE, programs the transfer
+direction, request source (including the UART request select register) and data
+alignment/increment fields; modes 2/3 build a two-entry linked-descriptor ring for
+double-buffered transfers. Sets the handle to READY/UNLOCKED and returns HAL_OK."
+0x8014b84,0x8014b84,0x8014be9,102,43,HAL_DMA_Start_IT,"Start a DMA transfer in interrupt mode (HAL layer).
+Rejects if the handle is locked or not READY (returns HAL_BUSY). Marks the channel BUSY, clears the
+error code, disables the channel (CR1 bit1 set, wait until enable bit0 clears), programs source/
+destination/length via DMA_SetConfig, unmasks the channel's completion interrupt in the global IM
+register (IM &= ~(2 << (ChannelIndex*2))) and enables the channel (CR1 bit0)."
+0x8014bec,0x8014bec,0x8014cc5,218,88,HAL_DMA_IRQHandler,"HAL DMA interrupt handler.
+Handles the channel's transfer-complete flag: normal mode clears/sets the mask and calls
+XferCpltCallback; ring mode (1) advances the current address in CR2 and wraps it at 0xffff
+via the CR1 disable/enable sequence; linked-descriptor modes (2/3) alternate half/full
+callbacks between the two descriptors. The channel flag is cleared at the end."
+0x8014cc8,0x8014cc8,0x8014cd9,18,8,HAL_WDG_Init_wrapper,"Re-initialize the watchdog after an upgrade/exit path: points the global hwdg handle at the
+WDG register block, restores its prescaler/config word and calls HAL_WDG_Init."
+0x8014ce8,0x8014ce8,0x8015227,1258,392,zw_main,"Application entry: hardware bring-up, UI/scope/DMM/siggen initialization, then the bare-metal main superloop."
+0x8015228,0x8015228,0x8015229,2,1,fls_drv_read_id,"Flash driver 'read ID' stub: returns the caller's pointer unchanged, i.e. leaves the ID buffer
+untouched. The W806 internal flash ID is not read through this path."
+0x801522c,0x801522c,0x8015329,254,110,HAL_ADC_MspInit,"ADC MSP initialization (only for ADC instance 0x200).
+Enables the ADC/analog clocks (bits 0x1800 in 0x40000E00) and configures the GPIOA pin mux
+for the selected channel: 0=PA1, 0x100=PA4, 0x200=PA3, 0x300=PA2, 0x800=PA1+PA4,
+0x900=PA3+PA2, setting the analog/input mode bits for each pin."
+0x8015330,0x8015330,0x8015383,84,35,HAL_PWM_MspInit,"PWM MSP init: enables the PWM clock (0x40000E00 |= 0x2000) and configures the PWM pins
+PA2 (mask 4) and PA3 (mask 8) with their alternate-function select/input-enable bits, plus PB25
+(mask 0x2000000, the signal-generator output)."
+0x801538c,0x801538c,0x80154ab,288,115,HAL_UART_MspInit,"UART MSP initialization: enables the peripheral clocks (writes 0x40000E00) and sets the
+GPIO pin mux for each UART instance. UART3 (0x40010C00) uses GPIOB PB0/PB1 (clock bit
+0x810), UART4 uses GPIOA PA8/PA9 (0x820), and the third instance (0x1000) uses GPIOA PA13
+(0x840). All enable the shared UART2_5 IRQ at priority 0."
+0x80154bc,0x80154bc,0x8015529,110,43,HAL_UART_MspDeInit,"UART MSP de-init: matches huart->Instance and releases the corresponding pins and clock
+gate: UART3 (0x40010C00) -> PB0/PB1 + clock bit 0x10, UART4 (0x40010E00) -> PA8/PA9 + bit 0x20,
+voice UART (instance 0x1000) -> PA13 + bit 0x40. Pins are left pulled-up via HAL_GPIO_DeInit."
+0x801553c,0x801553c,0x80155fd,194,84,HAL_SPI_MspInit,"SPI MSP initialization: enables the GPIO clocks and configures the low-speed SPI signals
+(GPIOA pin 0 and GPIOB pins 16/17/24), sets up the TX and RX DMA channels
+(hdma_spi_tx/hdma_spi_rx, structs with channel/priority fields, then HAL_DMA_Init), and
+enables the SPI_LS interrupt at priority 1."
+0x8015610,0x8015610,0x801563f,48,18,CORET_IRQHandler,"Core-timer (SysTick) vector. Saves the C-SKY exception save area (0x48 block and
+0x41c/0x400 block) on the stack, calls HAL_IncTick for the 1 ms time base, then restores the
+context and returns. The save/restore sequences are the SDK's fixed-address interrupt frame."
+0x8015644,0x8015644,0x8015671,46,17,ADC_IRQHandler,"ADC interrupt vector: saves the fixed C-SKY exception frame, calls
+HAL_ADC_IRQHandler(hadc) for the global ADC handle, then restores the frame."
+0x8015678,0x8015678,0x80156b1,58,21,UART1_IRQHandler,"Shared UART2_5/voice interrupt vector: saves the fixed C-SKY exception frame, dispatches
+HAL_UART_IRQHandler for the FPGA UART3, the DMM UART4 and the voice-module UART (instance 0x1000),
+then restores the frame."
+0x80156c0,0x80156c0,0x801575b,156,75,HAL_UART_RxCpltCallback,"UART receive-complete callback.
+For UART3 it calls zw_uart_rx_interrupt_handler_logic (FPGA upgrade protocol parser); for
+UART4 it copies the 10-byte DMM frame into dmm_rx_buffer; for the instance at 0x1000 it
+copies a 10-byte frame into a second buffer."
+0x801576c,0x801576c,0x8015799,46,17,SPI_LS_IRQHandler,"SPI interrupt vector: saves the fixed C-SKY exception frame, calls HAL_SPI_IRQHandler for
+the shared ST7789/FPGA SPI handle, then restores the frame."
+0x80157a0,0x80157a0,0x80157cd,46,17,DMA_Channel0_IRQHandler,"DMA channel 0 interrupt vector: saves the fixed C-SKY exception frame, calls
+HAL_DMA_IRQHandler for the SPI TX DMA handle, then restores the frame."
+0x80157d4,0x80157d4,0x8015801,46,17,DMA_Channel1_IRQHandler,"DMA channel 1 interrupt vector: saves the fixed C-SKY exception frame, calls
+HAL_DMA_IRQHandler for the SPI RX DMA handle, then restores the frame."
+0x8015808,0x8015808,0x801595b,340,120,zw_calib_step_ch1_gain,"Calibration step for the CH1 gain/ADC reference: averages the 300-sample trace pairs over several iterations, compares the result against the 0x7F/0x80 target, steps the CH1 sensitivity index settings[0x42] and adjusts the AFE offset through zw_scope_ch1_update_afe_offset until centered. Returns 0 while waiting, 1 to continue, 2 when finished. Called by zw_auto_calibration_handler."
+0x8015974,0x8015974,0x8015a1d,170,67,zw_calib_step_ch1_offset,"Guided calibration step: CH1 DC offset.
+Waits until the input is stable (max-min < 0x33) and the step counter reaches 5, averages
+600 samples from the two 300-sample buffers, then adjusts the CH1 offset calibration byte
+for the current range (index settings[0x42]+0x70) so the average approaches 0x7f. Advances
+through ranges 4..13 and refreshes hardware; returns 1 while more ranges remain, 2 when the
+sequence is complete."
+0x8015a34,0x8015a34,0x8015b69,310,112,zw_calib_step_ch2_gain,"Calibration step for the CH2 gain/ADC reference: averages 300-sample trace pairs over five passes, compares against the 0x7F/0x80 target, trims the CH2 calibration entry indexed by settings[0x80] and adjusts the AFE offset through zw_scope_ch2_update_afe_offset. Returns 0 waiting, 1 continue, 2 finished. Called by zw_auto_calibration_handler."
+0x8015b80,0x8015b80,0x8015c01,130,48,zw_calib_step_ch1_adc_reference,"Guided calibration step: CH1 ADC reference (high).
+Accumulates 300x2 samples over 25 steps, converts the average to the ADC reference value
+and stores 75000/(avg-0x7f) at calibration buffer +0x80 when the average is in 0xc1..0xd3
+(otherwise 1000). Returns 1 when the measurement is complete."
+0x8015c14,0x8015c14,0x8015c97,132,49,zw_calib_step_ch1_adc_reference_low,"Guided calibration step: CH1 ADC reference (low).
+Accumulates 300x2 samples over 25 steps and stores 75000/(0x7f-avg) at calibration buffer
++0x88 when the average is in 0x2b..0x3d (otherwise 1000). Returns 1 when complete."
+0x8015ca8,0x8015ca8,0x8015d29,130,48,zw_calib_step_ch2_adc_reference,"Guided calibration step: CH2 ADC reference (high).
+Same algorithm as the CH1 variant but stores the result at calibration buffer +0x84.
+Returns 1 when the 25-step measurement is complete."
+0x8015d3c,0x8015d3c,0x8015dbf,132,49,zw_calib_step_ch2_adc_reference_low,"Guided calibration step: CH2 ADC reference (low).
+Same algorithm as the CH1 low-reference step but stores the result at calibration buffer
++0x8c. Returns 1 when complete."
+0x8015dd0,0x8015dd0,0x8015eeb,284,94,zw_save_calibration_to_flash,Writes the 0x8E-byte scope/AFE calibration record to flash offset 0x2000 + 0x96000 = absolute 0x08098000.
+0x8015ef0,0x8015ef0,0x80161d7,686,266,zw_auto_calibration_handler,"Auto-calibration runner (settings[1]==5), called from main. Backs up the 0x154-byte settings block, resets calibration defaults, shows CALIB, then executes ten states (CH1/CH2 offset and gain, ADC reference high/low, preparation and save) through the state table; persists results with zw_save_calibration_to_flash and restores the backup, reporting DONE or FAILED on timeout."
+0x80161f8,0x80161f8,0x8016359,354,134,zw_load_calibration,"Loads scope calibration (0x8E bytes at flash +0x2000) and DMM calibration (0x30 bytes
+at +0x2400). Invalid scope data falls back to 990000 gain / 1000 marker defaults; each
+DMM calibration value outside 4000..6500 is replaced by 5000. Results go to
+scope_calib_buffer and dmm_calib_buffer."
+0x8016368,0x8016368,0x8016441,218,82,zw_calibration_menu_handler,"Calibration mode 1 handler (settings[0x12a]==1).
+Keys 0x21/0x23 increment and 0x22/0x24 decrement the value settings+0x70; keys 3/4 adjust
+settings+0xb0. Key 2 runs the frequency-meter reference calibration when enabled, saves
+settings to flash (offset 0x1000) and shows 'OK'; key 1 exits; key 0x14 restores both
+values to 1000 and saves."
+0x8016450,0x8016450,0x801651d,206,81,zw_calibration_fine_tune_handler,"Calibration mode 2 handler (settings[0x12a]==2).
+Applies +/-200 fine tuning to all 14 CH1 calibration entries (keys 0x21/0x23 add,
+0x22/0x24 subtract) or all 14 CH2 entries (keys 3/4), then updates the CH1/CH2 AFE
+offsets. Key 2 saves the calibration to flash with an 'OK' popup, key 1 exits."
+0x8016534,0x8016534,0x8016605,210,79,zw_calibration_per_range_handler,"Calibration mode 3 handler (settings[0x12a]==3).
+Keys 0x21/0x23 add 200 and 0x22/0x24 subtract 200 to/from the current range's entry in the
+scope calibration buffer (index settings[0x42]); keys 3/4 adjust entry settings[0x80]+0xe.
+Every change re-applies the CH1/CH2 AFE offsets; key 2 saves the calibration to flash with
+an 'OK' popup and key 1 exits."
+0x8016618,0x8016618,0x80166b7,160,60,zw_cursor_init,"Initializes the cursor UI descriptors and defaults: three cursor elements (positions,
+colors, visibility) and the cursor info box, plus the default cursor x positions at
+settings+0x100..0x106 (-105, 105, 85, -85) and settings+0x142 = 85."
+0x80166cc,0x80166cc,0x8016841,374,138,zw_cursor_movement_handler,"Moves the measurement cursors within the plot bounds while cursor mode is active (settings[0xFC] nonzero): events 0x2B/0x2C move cursor A horizontally, 0x30/0x31 cursor B, and the remaining events move the voltage cursors, clamping each to +-0x94 px (x) and the plot height (y). Called from main."
+0x8016848,0x8016848,0x8016b51,778,290,zw_scope_cursor_measurements_window,"Draws the cursor measurement box and dashed cursor lines. Cursor mode comes from settings[0xFC], the A/B x positions from settings +0x100/+0x102; the routine computes the delta time/frequency and delta voltage using the timebase and vertical scale, draws the two dashed vertical lines over the plot and renders the numeric readouts. Called from zw_scope_ui_refresh."
+0x8016b94,0x8016b94,0x8016b9f,12,5,zw_fpga_all_reset,"Reset the FPGA logic array: sends the FPGA SPI command byte 1 (soft reset). Called during
+power-up and after a failed acquisition to return the FPGA to a known state."
+0x8016ba0,0x8016ba0,0x8016bab,12,5,zw_fpga_acq_stop,Stop the FPGA acquisition engine: sends SPI command 1 with parameter 2 (stop/abort current capture).
+0x8016bac,0x8016bac,0x8016bd9,46,20,zw_fpga_set_mode_reg,"Rebuild FPGA config register 2 from global_settings (channel/run mode in settings[2], bit 2 from settings[0xDD] roll flag, bit 6 from settings[0x147]) while preserving bits 3-5 and 7, then write it."
+0x8016be4,0x8016be4,0x8016bfd,26,11,zw_fpga_set_highspeed_flag,"Set the FPGA high-speed mode flag: updates bit 7 of the cached FPGA config word at
+0x2000289c and sends the word with FPGA SPI register 2."
+0x8016c04,0x8016c04,0x8016c17,20,8,zw_fpga_acq_reset,Pulse the FPGA acquisition reset by writing 2 then 4 to config register 1.
+0x8016c18,0x8016c18,0x8016c37,32,14,zw_fpga_set_adc_interleave,"Set the FPGA dual-ADC interleave mode: updates bit 4 of the cached FPGA config word at
+0x2000289c, writes it to FPGA SPI register 2, then sends command 1/parameter 8 to apply the ADC
+phase configuration."
+0x8016c3c,0x8016c3c,0x8016c47,12,5,zw_fpga_set_pwm_val,"Set the FPGA's internal PWM/voltage value: writes register 0x1a over the FPGA SPI link
+(used for DAC/PWM-style analog controls inside the FPGA)."
+0x8016c48,0x8016c48,0x8016c75,46,16,zw_system_power_control,"Master power control for the acquisition hardware: sets/clears bit 0 of the cached FPGA
+config byte, sends it to the FPGA as SPI command 6, and starts/stops the system-power PWM
+(hpwm1) via zw_HAL_PWM_Start/Stop_wrapper. param != 0 = power on."
+0x8016c7c,0x8016c7c,0x8016ca5,42,16,zw_power_on,"Power-on handling: if settings[0xf9] enables it, switches the system power on
+(zw_system_power_control(1)), sets the power-state flag at 0x200028a4 and arms the off timer
+for param_1 seconds (milliseconds*1000 us)."
+0x8016cb4,0x8016cb4,0x8016cd5,34,13,zw_auto_power_off_check,"If the auto-power-off flag is set and its idle timer expires, call zw_system_power_control(0) to switch the instrument off and clear the flag."
+0x8016ce0,0x8016ce0,0x8016ced,14,5,zw_fpga_counter_reset,"Reset the FPGA sample counter: SPI command 1, parameter 0x100."
+0x8016cf0,0x8016cf0,0x8016d05,22,10,zw_fpga_set_counter_gate,"Set the FPGA counter gate: updates bit 16 of the cached FPGA control word at 0x200028a0
+from param_1, then writes the full word to FPGA SPI register 0x17 (gates/starts the sample
+counter used for time-base measurements)."
+0x8016d0c,0x8016d0c,0x8016d15,10,4,zw_fpga_read_counter,"Read the FPGA's internal sample counter: issues the FPGA SPI register read for register 0x18
+and returns the value from zw_fpga_spi_read_reg."
+0x8016d18,0x8016d18,0x8016d33,28,11,zw_fpga_counter_disable_and_clear,"Disable and clear the FPGA sample counter: clears bit 16 of the cached control word at
+0x200028a0, writes it to FPGA SPI register 0x17, then sends command 1/parameter 0x200 to clear
+the counter value."
+0x8016d38,0x8016d38,0x8016eed,438,163,zw_calculate_frequency,"Reads the FPGA frequency counter (registers 0x18/0x19 plus flag register 0x0F) and converts the counter and time-base values into period and frequency. Returns 0 on counter overflow, 2 when no signal/timeout is detected, and returns the 64-bit result through param_1. Called by zw_scope_frequency_meter."
+0x8016f1c,0x8016f1c,0x8016f37,28,12,zw_fpga_set_freq_meter_triggers,"Program the FPGA frequency-meter trigger configuration: builds the cached register-0x17
+word as param_2 | (param_1 << 8) and sends it over FPGA SPI. Used by the frequency counter to
+select trigger source/edges."
+0x8016f3c,0x8016f3c,0x8016fab,112,43,zw_siggen_freq_duty,"Program signal-generator frequency and duty. Converts freq into the FPGA DDS phase
+increment using 64-bit scaling (freq<<28 divided by freq>>4 with a constant divisor, rounding
+up at small remainders) and writes it to FPGA SPI register 0x10; scales duty to per-mille
+(duty<<28 / (duty>>4) / 1000) and writes it to register 0x11. Diagnostic printf is compiled out."
+0x8016fb8,0x8016fb8,0x8017005,78,28,zw_fpga_load_siggen_wave_buffer,"Upload a 256-entry (512-byte) 16-bit waveform table to the signal generator: sets bit 2
+of the cached FPGA config byte, sends SPI command 6, writes each halfword through FPGA SPI
+register 0x10 (auto-incrementing), restores the previous streaming bit state, sends command 6
+again, and finally reprograms frequency/duty from settings+0xf0 and settings+0xec."
+0x8017010,0x8017010,0x8017057,72,25,zw_siggen_enable_control,"Enable/disable the signal-generator output. Enable: sets bit 1 of the cached FPGA config
+byte and sends SPI command 6. Disable: zero-fills a 1 KB buffer, uploads it as the wave table
+(zw_fpga_load_siggen_wave_buffer), clears bit 1 and sends command 6, silencing the output."
+0x801705c,0x801705c,0x801716d,274,109,zw_fpga_set_sample_rate,Compute the FPGA sample-rate divider from the timebase in global_settings (+0xC0/+0xC4) and write config register 7. Encoding depends on settings[2] (1-channel vs 2-channel mode) and has special cases for dividers 1/2/5/25 and even-divider flags 0x400000/0x8400000.
+0x8017190,0x8017190,0x80171df,80,29,zw_fpga_set_trigger_config,"Build and write FPGA config register 5: the trigger level from settings +0x40 clamped to 8..250 plus the +-10 hysteresis window, with settings[0x38] in bit 16 and settings[0x3A] in bit 17."
+0x80171e4,0x80171e4,0x801720b,40,15,zw_fpga_set_pre_trigger,"Write FPGA config register 0xE with the pre-trigger sample count from settings +0xC8 (biased by 0x400), doubled in 2-channel mode."
+0x8017210,0x8017210,0x8017237,40,15,zw_fpga_set_post_trigger,"Write FPGA config register 8 with the post-trigger sample count from settings +0xCC (biased by 0x400), doubled in 2-channel mode."
+0x801723c,0x801723c,0x8017257,28,8,zw_fpga_update_all_configs,"Push the whole acquisition configuration to the FPGA: mode register, sample rate, trigger configuration, pre/post-trigger counts and acquisition reset. Called after settings changes."
+0x8017258,0x8017258,0x8017263,12,5,zw_fpga_set_acq_mode_continuous,"Put the FPGA acquisition engine in continuous (run) mode: SPI command 1, parameter 0x80."
+0x8017264,0x8017264,0x801726f,12,5,zw_fpga_set_acq_mode_single,"Put the FPGA acquisition engine in single-shot mode: SPI command 1, parameter 0x40."
+0x8017270,0x8017270,0x80172a5,54,23,zw_fpga_read_trigger_addr,"Read the FPGA trigger address: reads SPI register 9 (trigger position in the sample
+buffer). In non-roll mode (settings[0xdd]==0) subtracts 4 and wraps by adding the buffer length
+when negative; when dual-ADC/interleave mode is active (settings[2]==1) divides by 2 to convert
+the byte address into a sample-pair index."
+0x80172b0,0x80172b0,0x80172c3,20,9,zw_fpga_read_adc_values,"Read both FPGA-internal ADC values: SPI register read 0x12, then split the word into
+high byte (*param_1) and low byte (*param_2). Used by the dual-ADC interleave check."
+0x80172c4,0x80172c4,0x80172d1,14,6,zw_fpga_read_status,"Read the FPGA status word: SPI register read 0x14, result stored at *param_1. The status bits
+are decoded by the zw_fpga_check_* helpers and the acquisition state machine."
+0x80172d4,0x80172d4,0x80173c9,246,81,zw_fpga_set_data_read_params,"Programs the FPGA sample-memory read parameters.
+Computes the circular-buffer start offset (settings+0x3c minus settings+0x2c), doubles it
+when both channels are interleaved (settings[2]==1), writes the masked offset to register 3,
+the capture length (settings+0x00) to register 0xb, the A/B cursor span (settings+0xd0/
++0xd2) + 1 to register 0xc, sets/clears bit 3 of mode register 2 from param_1, then issues
+command 0x10 to register 1."
+0x80173d4,0x80173d4,0x80173e1,14,5,zw_fpga_check_trigger_occurred,Return the FPGA 'trigger occurred' status flag: bit 0 of SPI status register 0x0f.
+0x80173e4,0x80173e4,0x80173f1,14,5,zw_fpga_check_maxmin_ready,Return the FPGA 'max/min capture ready' status flag: bit 1 of SPI status register 0x0f.
+0x80173f4,0x80173f4,0x80174cf,220,76,zw_fpga_read_data_from_memory,"Read acquired samples from FPGA sample memory over hardware SPI: program registers 0x16/3, set stream-enable bit 0x20 (and bit 3 depending on mode), start with register 2, receive param_3 bytes in 1000-byte chunks via zw_spi_receive_hw with param_5-scaled delays, then disable streaming."
+0x80174d8,0x80174d8,0x80174ff,40,17,zw_gray_init,Initialise the four trace-render descriptors (CH1/CH2 live and persistence buffers) with channel IDs 0/1 and palette colour indices 0x3F/0x5F.
+0x8017510,0x8017510,0x80176b5,422,147,zw_scope_transfer_maxmin_data,"Transfers the min/max sample pairs for the visible window over SPI: waits for the FPGA max/min-ready flags for bank 0 and bank 1 (zw_fpga_set_data_read_params 0/1), reads two bytes per sample into 600-byte buffers at the window offset, and merges them for the renderer. Called from zw_scope_prepare_display_data and its zoom variant."
+0x80176cc,0x80176cc,0x8017829,350,107,zw_scope_process_samples_for_rendering,"Turns acquired samples into display data: interpolates when roll mode is active (settings[0xDF]) or refreshes the raw display buffers, then downsamples each screen column according to the timebase ratio, writing both the main and persistence arrays. Called from zw_scope_prepare_display_data and its zoom variant."
+0x8017838,0x8017838,0x801796f,312,101,zw_scope_apply_rendering_smoothing,"Smooths the rendered 300-sample trace buffers: when the visible window is wider than 49 samples, applies a local 3-point median/average filter to remove single-pixel spikes in both channel arrays before finalization. Called by zw_scope_finalize_render_buffer."
+0x8017974,0x8017974,0x8017acf,348,122,zw_scope_finalize_render_buffer,"Finalizes a rendered channel buffer after smoothing: normalizes/clamps the sample values using the channel offset and gain, computes the buffer min/max statistics, and stores them in the buffer header (bytes 4/5). Called from zw_scope_prepare_display_data and its zoom variant."
+0x8017ad4,0x8017ad4,0x8017cb3,480,174,zw_scope_handle_auto_trace_centering,"Auto-centers a channel trace vertically when the trace mean drifts from screen center: averages the two trace banks, computes a bounded correction step, and adjusts the CH1 offset settings +0x48 or CH2 offset +0x88, forcing a re-render when the offset changes. Called from zw_scope_prepare_display_data and its zoom variant."
+0x8017cd0,0x8017cd0,0x8017df7,296,106,zw_scope_prepare_display_data,"Builds the time-domain display buffers each frame: transfers max/min pairs or processes raw samples, finalizes and auto-centers the CH1/CH2 buffers, and maintains the 300-sample history ring used by roll and persistence rendering. Called from main."
+0x8017e2c,0x8017e2c,0x8017e77,76,28,zw_screenshot_copy_fb_to_buffer,"Copy four 300-byte slices of the framebuffer (two source pointers, each with a 300-byte pair) into the screenshot staging buffer at offsets +0/+15000/+30000/+45000 and clear the busy flag. Used by the screenshot save path."
+0x8017e88,0x8017e88,0x8017fe9,354,115,zw_scope_draw_trace_to_framebuffer,"Plots one channel's trace into the 8-bpp framebuffer from the min/max sample banks: for each sample column fills the vertical span min..max with the palette color (param_1 high byte), offset by the plot origin (10,10) and clipped to the 200-row plot area. Called by zw_scope_persistence."
+0x8017ffc,0x8017ffc,0x8018145,330,132,zw_scope_persistence,"Renders the main and persistence traces: fades the previous framebuffer in persistence mode, draws the grayscale persistence layer when enabled (settings[0xE6]/[0x129]), otherwise copies and plots the channel buffers with their palette colors. Called from zw_scope_ui_refresh when not in the zoom overlay mode."
+0x8018160,0x8018160,0x801821b,188,66,zw_scope_prepare_display_data_zoom,"Builds the zoomed display buffers.
+When not in XY mode and the right cursor is before column 300, it processes the samples
+into min/max buffers for the current time base, then temporarily swaps settings[0x10] with
+the saved zoom time base (settings[0x134]), zeroes the roll flag, recalculates timing and
+processes the same samples again, restoring the original time base afterwards. CH2 is
+processed too in dual-channel mode."
+0x8018234,0x8018234,0x8018317,228,82,zw_scope_draw_trace_dual_ch,"Renders the dual-channel waveform into the framebuffer.
+For every column x in the cursor range settings+0xd0..+d2 it fills the min..max sample span
+of the selected channel (low byte of param_1: 0=CH1, 1=CH2) with palette color
+param_1>>16, at framebuffer row (sample>>1)+4, column x+10."
+0x8018328,0x8018328,0x801840b,228,82,zw_scope_draw_persistence_trace,"Renders the persistence (afterglow) traces into the framebuffer.
+For every column x in the A/B cursor range (settings+0xd0..+d2) it fills the column's
+min..max sample span (arrays at the two sample-buffer pointers) with palette color
+param_1>>16, at row (sample>>1)+0x68 and column x+10. Low byte of param_1 selects the
+channel (0=CH1, 1=CH2)."
+0x801841c,0x801841c,0x80185df,452,191,zw_scope_render_all_traces,"Renders all trace layers for the current view: the dual-channel trace for the main and, when enabled, the persistence/zoom buffers selected by settings[+0x11E] and settings[2]. Each 0x4A6-byte display buffer is copied to the stack before being drawn. Called from zw_scope_ui_refresh."
+0x80185fc,0x80185fc,0x8018719,286,112,zw_zoom_mode_handler,"Zoom-mode (time-base magnification) handler.
+Action 0x4d toggles the zoom-mode flag settings[0x129] and re-applies hardware settings.
+Action 0x4a toggles zoom: when settings[0x135] is set, the previously saved time-base
+offsets (settings+0x6c, +0xac) are restored and the flag cleared; otherwise, if no popup or
+menu is active and the time-base index is in the zoomable range, the current offsets are
+saved, the time base is scaled, and hardware is updated. Invalid requests show the 'Limit'
+popup (zw_draw_popup_message)."
+0x8018734,0x8018734,0x801875d,42,16,zw_scope_exit_zoom_mode_and_update,"Leave zoom mode from a non-zoom UI path: if the zoom-active flag settings[0x135] is set,
+clears it, restores the saved time-base offsets settings+0x6c and settings+0xac from the backup
+at 0x2001a614/0x20019c9c, and re-applies hardware settings (mask 0xff)."
+0x801876c,0x801876c,0x80188fb,400,130,zw_scope_calculate_and_draw_math_trace,"Computes and draws the MATH trace (CH1+CH2, CH1-CH2 or inverted, selected by settings[0x148]) when math display is enabled and neither cursor, zoom nor CH2-only view is active. Combines the two 300-sample buffers into the math buffer and plots the result. Called from zw_scope_ui_refresh."
+0x801890c,0x801890c,0x8018a35,298,108,zw_scope_draw_trigger_icon,"Draws a small trigger-mode icon as an 8x8 dot pattern directly into LCD controller RAM (RGB565 color 0x07E0) at one of the home-screen grid cells: param_1 low 2 bits select the column, upper bits the row. Called from zw_home_screen."
+0x8018a38,0x8018a38,0x8018bab,372,150,zw_home_screen,"Handles the Home icon menu: event 1 toggles between the normal scope view (settings[1] 1) and the home page (settings[1] 7), drawing the 320x240 Home bitmap and trigger icon; navigation events move among the five home icons and return the selected action code. Called from main."
+0x8018bbc,0x8018bbc,0x8018d07,332,128,zw_scope_fetch_samples_from_fpga,"Acquire a fresh sample set from the FPGA and store it in the CH1/CH2 waveform buffers (0x2001D2A0 / 0x2001A618), applying the current channel mode, trigger position and roll-mode handling. Runs from the main acquisition loop while the scope is running."
+0x8018d24,0x8018d24,0x8018d63,64,20,zw_scope_update_display_buffers,"Recompute how many samples to fetch for display: reads the float time-base value at
+settings+0xd4, multiplies by 300.0 and 100.0, truncates to unsigned, rounds up to a multiple of
+100 (ceil(v/100)) and calls zw_scope_fetch_samples_from_fpga with that count."
+0x8018d68,0x8018d68,0x8018e9d,310,101,zw_scope_apply_dsp_filter,"DSP resampling/filter helper for traces: computes the per-pixel ratio from the sample count and timebase, resamples/interpolates the source buffer into the destination, and optionally processes both channels; used by interpolated rendering and the software trigger search."
+0x8018eb8,0x8018eb8,0x8018fc5,270,93,zw_scope_software_trigger_search,"Software trigger search over the CH1 sample buffer.
+Maps the analog trigger level (settings+0x40, or +0x126 in roll mode) to a +/-2 pixel band,
+fetches the pre-trigger window from FPGA memory into ch1_DAT_0x2001d2a0, applies the DSP
+filter, then scans for a rising or falling edge through the band according to the edge
+setting settings[0x3a]. On success the trigger sample index is stored in the global
+trigger-position variable."
+0x8018fdc,0x8018fdc,0x801905f,132,48,zw_scope_align_sampled_data,"Aligns the sampled data to the trigger position.
+Computes the sample offset from the trigger position and the time base, then copies 300
+bytes of CH1 from the raw buffer+offset to the aligned output buffer. In dual-channel mode
+it also copies 300 bytes of CH2, adding a phase offset of 10/4/2 samples for sample rates
+of 10/20/50 (interleaving compensation)."
+0x8019078,0x8019078,0x8019169,242,108,zw_scope_generate_interpolated_traces,"Builds the interpolated CH1/CH2 sample buffers for the current time base.
+Matches settings+0xe0 against an 8-entry time-base table to pick a fixed start offset
+(default 0x14b), stores the sample rate (1e6/timebase) in a global, runs the software
+trigger search, fetches the window from FPGA memory, applies the DSP filter to CH1 (and
+CH2 in dual mode), then aligns the data and advances a 0..9 frame-rotation counter."
+0x8019190,0x8019190,0x8019277,232,85,zw_scope_fetch_samples_generic,"Generic FPGA sample fetch used by the rendering path (param_1 = extra sample offset,
+param_2 = byte count). Converts the 64-bit timestamp settings+0x30 to samples with
+__divdi3/__moddi3 by 1000, derives the circular read offset from settings+0x3c, wraps it
+by the buffer length settings+0xc, then reads CH1 (and CH2 when dual-channel) through
+zw_fpga_read_data_from_memory."
+0x8019288,0x8019288,0x8019833,1424,495,zw_scope_measure_vpp_avg_rms,"Computes vertical statistics for one channel over the capture buffer: min/max, average and RMS. Raw 8-bit samples are converted to engineering units with the channel offset/gain stored in settings (+0x44/+0x74/+0x78 for CH1, +0x84/+0xB4/+0xB8 for CH2). Writes Vpp/Vtop/Vbase, Vavg and Vrms into the measurement block. param_3 selects the channel, param_4 packs flags and the sample count."
+0x8019848,0x8019848,0x8019af7,688,228,zw_scope_measure_top_base_amp,Estimates the top and base levels of a waveform by histogram-style scanning: it counts occurrences of levels near the upper and lower extremes of the min/max range and picks the most frequent ones. Derives amplitude = top - base. Called for a channel when measurement flags (+0x6C/+0xAC) request top/base/amplitude.
+0x8019b0c,0x8019b0c,0x801a0e3,1466,502,zw_scope_measure_frequency_and_duty,"Measure frequency and duty from an 8-bit trace using hysteresis-threshold edge detection. Finds up to 100 rising/falling edges, averages the counted periods, converts to time using the sample interval in settings +0x14/+0x18, and stores frequency and duty in the measurement result block (+0x40/+0x48). param_4 packs the low/high hysteresis levels."
+0x801a0e8,0x801a0e8,0x801a4c7,954,317,zw_scope_measure_pulse_params,"Measure pulse parameters from an 8-bit trace: hysteresis-based edge detection collects up to 100 high/low run lengths, computes average high and low widths, period/frequency (+0x50/+0x58) and duty percentages in 0.1% units (+0x60/+0x62); also calls zw_scope_measure_frequency_and_duty when the channel is configured for frequency display."
+0x801a4cc,0x801a4cc,0x801a90d,1042,410,zw_scope_measurements,"Main measurement pass, called from main once per frame. In roll mode it measures the 300-sample snapshot at PTR_DAT_0801A8CC; otherwise it derives the visible sample window and decimation from settings +0xC0..+0xD2. Runs zw_scope_measure_vpp_avg_rms, zw_scope_measure_pulse_params and (when flags +0x6C/+0xAC bit 0x10 are set) zw_scope_measure_top_base_amp for CH1 and CH2, filling the measurement block consumed by the label renderer."
+0x801a918,0x801a918,0x801b8c1,3896,1404,zw_scope_measurement_labels,"Renders the on-screen measurement panel. Formats per-channel frequency, Vpp, Vavg, Vrms, period, duty cycle and pulse width and draws them into a 3-column, multi-row grid using the small font (Chinese glyphs at 0x08028C24, English strings otherwise). param_26 != 0 selects CH2; row/column tables and the measurement-enable flags live in settings +0x69/+0x6C/+0xA9/+0xAC and +0x108/+0x10A. Called from zw_scope_update_measurement_labels."
+0x801b8d4,0x801b8d4,0x801b939,102,44,zw_scope_update_measurement_labels,"Refresh the on-screen measurement labels: zeroes the dirty flags, copies the 0x54-byte
+CH1 label descriptor from +0x10 of the measurement state to the stack, calls
+zw_scope_measurement_labels with its first four fields (recomputing Vpp/freq/etc.), bumps the
+label sequence counter, and repeats for CH2 when dual-channel display is enabled (settings[2]==1)."
+0x801b950,0x801b950,0x801b969,26,9,zw_scope_draw_trigger_state_icon,"Draw the trigger-state icon when enabled: if settings[0x121] bit 3 is set, renders the
+parametrized trigger glyph from the UI element at 0x20002a70."
+0x801b974,0x801b974,0x801b9fd,138,48,zw_scope_center_ch1_trace,"Centers the CH1 trace vertically.
+If settings[0x68]==1 (auto/AC) the channel offset is zeroed; otherwise computes a 64-bit
+offset adjustment from the CH1 scale settings+0x44, the current offset settings+0x48 and the
+ADC midpoint, storing it at settings+0x54/+0x58. In normal trigger mode it saves the
+trigger position and re-bases settings+0x7c; in roll mode those are zeroed. Sets the
+vertical position to 0 and re-applies hardware settings."
+0x801ba08,0x801ba08,0x801ba9f,152,49,zw_scope_center_ch2_trace,"Centers the CH2 trace vertically.
+If settings[0xa8]==1 (auto/AC) the channel offset is zeroed; otherwise computes a 64-bit
+offset adjustment from the CH2 scale settings+0x84, the current offset settings+0x88 and the
+ADC midpoint, storing it at settings+0x94/+0x98. In normal trigger mode it also saves the
+trigger position and re-bases settings+0xbc; in roll mode those are zeroed. Finally sets the
+vertical position to 5 and re-applies hardware settings."
+0x801baa8,0x801baa8,0x801bac9,34,14,zw_center_channel_handler,"Handle channel-centering keys: key 0x14 vertically centers CH1 and key 0x54 centers CH2
+(zeroing that channel's vertical offset). Returns the key code so the caller sees it consumed."
+0x801bacc,0x801bacc,0x801baff,52,23,zw_scope_calculate_ch1_auto_trigger,"Compute the CH1 vertical offset used by auto-setup: unless settings[0x68]==1 (special
+coupling/invert case), offset = settings+0x44 scale * ((average ADC - 0x7F) - param) / 25; stores
+the value at settings+0x54 and its sign extension at +0x58. Zeroes both otherwise."
+0x801bb08,0x801bb08,0x801bb45,62,23,zw_scope_calculate_ch2_auto_trigger,"Compute the CH2 vertical offset used by auto-setup: unless settings[0xa8]==1, offset =
+settings+0x84 scale * ((average ADC - 0x80) - param) / 25; stores the value at settings+0x94 and
+its sign extension at +0x98. Zeroes both otherwise."
+0x801bb50,0x801bb50,0x801bd21,466,173,zw_auto_trigger_level_calculation,"Computes the automatic trigger level from the midpoint between the captured trace minimum and maximum, converts it through the channel offset/gain, and writes it into the trigger settings. Runs at a throttled rate while AUTO trigger is active; called from main."
+0x801bd34,0x801bd34,0x801bdc1,142,46,zw_scope_save_waveform_buffer,Snapshot 300 samples of both channels (live and alternate arrays) plus the display window start/end columns when the Save key (0x52) arms it; the saved trace is then drawn by zw_scope_draw_saved_waveform.
+0x801bdec,0x801bdec,0x801bea3,184,63,zw_scope_draw_saved_waveform,"Draw the saved waveform snapshot into the LCD framebuffer: CH1 envelope in color 2 and CH2 (when enabled) in color 4, with the y range clipped to rows 0x1C..0xE3 and the trace window offset by 10 pixels."
+0x801bec4,0x801bec4,0x801bf31,110,40,zw_scope_auto_adc_interleave_check,"Periodic auto ADC interleave (dual-ADC phase) check, called from the main loop.
+When its timer expires it sets the FPGA ADC interleave mode from settings[0x38] && settings[2]
+(both non-zero => interleave on), samples both ADC values, and raises the mismatch flag at the
+pointer target when |chA-chB| >= 26 and, if settings[0x3b] is set, the per-channel threshold at
+settings+0x40 does not lie between the two readings. Flag=0 when values look consistent."
+0x801bf40,0x801bf40,0x801c38b,1072,351,zw_scope_acq_state_machine,"Scope acquisition state machine, called from main every loop. State is kept in settings[0xDC]: 0 idle, 1 arm/settle delay, 2 wait-for-trigger, 3 stop, 0xFF timeout. Arms the FPGA in single or continuous mode, polls the trigger (zw_fpga_check_trigger_occurred), enforces auto-trigger timeouts, handles roll/block and interleaved-ADC configurations, and stops the acquisition when requested."
+0x801c39c,0x801c39c,0x801c3e5,74,26,zw_settings_save,"Saves settings: copies the first 0x154 bytes of global_settings into a 0x400-byte buffer, appends 'GO' validity magic at +0x3FE, then writes to flash at (0x96000 + offset). All callers pass offset 0x1000 -> absolute 0x08097000."
+0x801c3f0,0x801c3f0,0x801c4fd,270,89,zw_settings_load,Loads a 0x400-byte settings record from flash (0x96000 + offset; caller passes 0x1000 -> 0x08097000) and accepts it only if the 'GO' magic is present at +0x3FE.
+0x801c508,0x801c508,0x801c51f,24,8,zw_settings_invalidate,Invalidates saved settings by clearing the 'GO' magic and rewriting the 0x400-byte record at flash (0x96000 + offset); caller passes 0x1000 -> 0x08097000.
+0x801c524,0x801c524,0x801c695,370,117,zw_screenshot_view,"Displays stored screenshot imgSel. Looks up the flash slot in screenshot_index_buffer,
+reads the 2048-byte record at 0x08096000 + (slot+0x54)*0x800, restores the recorded
+waveform arrays and 340-byte settings snapshot, redraws the scope UI with that state,
+overlays 'imgSel+1/total' and flushes. Previous settings are saved/restored around it."
+0x801c6c8,0x801c6c8,0x801c783,188,74,zw_screenshot_init,"Initializes the screenshot system: arms a 90 ms timer, reads the 136-byte screenshot index
+from flash offset 0x29000 (persistent area 0x96000), and if the count/max fields are invalid
+resets it to 63 empty slots and writes it back. Then sets up the image-browser UI elements:
+zoom at (299,135), trash at (300,183) and exit at (295,219)."
+0x801c7a8,0x801c7a8,0x801c8f7,336,124,zw_screenshot_save,Saves a screenshot: writes the 0x800-byte image to slot n at absolute 0x080C0000 + n*0x800 and updates the 0x88-byte index at 0x080BF000.
+0x801c92c,0x801c92c,0x801c9ef,196,73,zw_screenshot_render_envelope,"Renders a 75-column min/max envelope of the waveforms into a screenshot bitmap.
+Decimates the sample arrays by 4, tracks the min/max of each column (local_c0/local_74),
+then draws vertical lines with zw_draw_vline_indexed at x=param_1.., y offset param_2,
+compressed by /5, using color param_5. Used when composing screenshots of the traces."
+0x801c9f0,0x801c9f0,0x801caa1,178,65,zw_screenshot_draw_thumbnail,"Draws screenshot browser entry param_3 as a thumbnail at (x=param_1, y=param_2).
+Reads its 2048-byte record and renders the stored trace envelopes: first pair with
+palette index 0x3F (CH1 color) and second pair with 0x5F (CH2 color); the saved enable
+flags at record offsets 0x4B2/0x5CE decide which pairs are drawn."
+0x801caac,0x801caac,0x801ce1d,832,324,zw_screenshot_browser,"Screenshot browser and save path: stores the current screen into the flash screenshot ring (63 records of 0x800 bytes from 0x08096000+0x2A000), navigates the thumbnail grid, opens a screenshot, and deletes entries via zw_screenshot_delete_handler. Maintains the 340-byte settings snapshot so that leaving the browser restores the previous instrument state. Called from main."
+0x801ce24,0x801ce24,0x801cf61,318,120,zw_scope_ch1_set_trigger_level,"Adjusts the CH1 trigger level from front-panel events 0x25/0x26: moves the level as a fraction (1/25) of the CH1 vertical scale settings[0x44], clamps it to the channel range and refreshes the trigger-level display. Called from zw_scope_apply_settings_update."
+0x801cf70,0x801cf70,0x801d0c1,338,120,zw_scope_ch2_set_trigger_level,"Adjusts the CH2 trigger level from front-panel events 0x27/0x28: moves the level as a fraction of the vertical scale settings[0x84], clamps it to the channel range and refreshes the trigger-level display. Called from zw_scope_apply_settings_update."
+0x801d0d0,0x801d0d0,0x801d2f3,548,202,zw_scope_ch1_vertical_handler,"Vertical front-panel handler for CH1. V/div events 0x15/0x16 move the sensitivity index settings[0x42] through the 14-entry table (clamped at 4..13) with 'Limit' popups; position events 0x21/0x22 adjust settings +0x44/+0x4C..+0x50 within bounds and update the AFE offset, displaying the value. Called from zw_scope_apply_settings_update."
+0x801d300,0x801d300,0x801d54f,592,204,zw_scope_ch2_vertical_handler,"Vertical front-panel handler for CH2. V/div events 0x0D/0x05 move the sensitivity index settings[0x80] through the 14-entry table (clamped at 4..13) with 'Limit' popups; position events adjust settings +0x84/+0x8C within bounds and update the AFE offset, displaying the new value. Called from zw_scope_apply_settings_update."
+0x801d55c,0x801d55c,0x801d647,236,80,zw_scope_set_math_vertical_offset,"Adjusts the math trace vertical position from keys 0x31/0x32 (up/down).
+Only active when math is enabled, settings[0x11e]==2 (math page) and no popup is open.
+Changes the math offset settings+0x14c and the scaled position settings+0x150 by 1 or 2
+steps (fine when settings[0x11f]/[0x130] set), clamping both to [-100,100]."
+0x801d64c,0x801d64c,0x801dc81,1568,578,zw_scope_horizontal_handler,Horizontal front-panel handler. Event 0x11/0x12 (zoom keys) increments/decrements the timebase index settings[0x10] (0..29) using the 8-byte time/div table at 0x0801D994 and the per-channel limit settings[0x134]; the scroll events adjust horizontal position/trigger offset. Displays the new timebase via a temporary on-screen message. When settings[0x12B] is set it forces roll mode and clears the horizontal offsets.
+0x801dc8c,0x801dc8c,0x801ded3,584,205,zw_calculate_float_div_and_scale,"64-bit scaled-division helper used by the timing calculations: divides the dividend param_1/param_2 by divisor param_3/param_4, applying 1000/1000000 pre-scaling and range checks, and returns the 32-bit quotient. Called from zw_scope_calculate_timing_params and zw_scope_memory_bar."
+0x801dedc,0x801dedc,0x801ea01,2738,865,zw_scope_calculate_timing_params,"Derive all acquisition/display timing from the selected timebase: look up the sample interval and sample-count table for the time/div index, compute pre/post-trigger depths and trigger column, sample-window start/end offsets, roll-mode and interpolation flags, and update settings +0x14/+0x18 (sample interval), +0x1C (trigger offset), +0xC0 (sample rate divisor)."
+0x801ea14,0x801ea14,0x801edfd,994,356,zw_scope_system_state_controller,"Handles global scope state transitions from front-panel events: RUN/STOP toggle (event 10) including run-state and horizontal-offset bookkeeping, auto-set, XY/display-mode switching and related status popups. Called from zw_scope_apply_settings_update."
+0x801ee0c,0x801ee0c,0x801efdb,464,166,zw_scope_apply_settings_update,"Apply pending settings to the hardware: system state, CH1/CH2 vertical stages, trigger levels, horizontal/timebase, math offset, timing recalculation, roll handling, PWM/backlight calibration and AFE re-initialisation; sets the redraw/refresh flags."
+0x801eff0,0x801eff0,0x801f00d,30,13,zw_scope_update_hardware_check,"Gate for applying pending settings to hardware: if a change is flagged (param != 0) and the instrument is in a scope-like mode (settings[1] == 1, 4 or 5), call zw_scope_apply_settings_update."
+0x801f014,0x801f014,0x801f217,516,162,zw_scope_init_default_settings,"Load the settings block from flash; on first boot (no valid block) initialise all scope, siggen and calibration defaults, write DMM calibration defaults to flash offset 0x2400 and save the settings, then apply them to hardware. Uses factory defaults such as CH1/CH2 990000 gain and 5000 DMM counts."
+0x801f238,0x801f238,0x801f245,14,5,zw_dmm_hv_relay_enable,"Enable the DMM high-voltage relay by driving PA10 (GPIOA bit 10) high; used when selecting
+high-voltage measurement ranges."
+0x801f24c,0x801f24c,0x801f3c3,376,142,zw_dmm_side_menu,"Draws the DMM side menu strip along the right edge (0x28 px wide): five function buttons (V/mV, A/mA, resistance, continuity/diode, capacitance) separated by hairlines, with the active mode highlighted according to the current DMM mode. Called from zw_dmm_update."
+0x801f3cc,0x801f3cc,0x801f3fd,50,21,zw_gpio_PA6_control,"Drive PA6 as an output: configures PA6 (mask 0x40) as output and sets it high when
+param != 0 or low when param == 0. Used by the DMM front-end control sequence."
+0x801f404,0x801f404,0x801f433,48,21,zw_dmm_uart_init_hw,"Initializes UART4 for the DMM module: 9600 baud, 8N1, no flow control, and arms
+interrupt-driven receive into the DMM packet buffer. Handle uart4_init_data (0x2001DE58)
+is serviced by UART1_IRQHandler together with the FPGA and voice UARTs."
+0x801f440,0x801f440,0x801f489,74,25,zw_dmm_send_cmd,"Sends a 10-byte command frame to the DMM MCU over UART4:
+AA 55 <type> 00 00 00 00 <mode> <cksum_hi> <cksum_lo>, where checksum = type + mode
+(16-bit). Called by the DMM mode/calibration logic with type 2 (self-test) and type 5
+(mode select)."
+0x801f490,0x801f490,0x801f57b,236,99,zw_dmm_set_hardware_mode,"Selects a DMM frontend mode (0..11): writes the protocol mode byte to 0x200045A9,
+configures PA10 range relay (bit 10) for modes 4/6 or enables the HV path relay for the
+others, sends command 0x05 <mode>, then waits 100 ms. Mode byte map:
+0:18 1:16 2:15 3:19 4:0A 5:0C 6:0B 7:0D 8:12 9:10 10:13 11:11; mode 2 also calls
+zw_pwm_control_hw(0x31)."
+0x801f584,0x801f584,0x801f5e7,100,37,zw_dmm_frontend_init,"Initialize the DMM front-end: configures the PA10 HV relay line as output, waits,
+deasserts it, initializes the DMM UART, sets the front-end mode byte to 4, asserts PA6, waits
+100 ms, arms a 280 ms settling timer, programs DMM hardware mode 4, and clears settings[0x131]
+when the DMM is disabled (settings[0x12e]==0)."
+0x801f5f8,0x801f5f8,0x801f85b,612,244,zw_dmm_factory_calibration,"Factory DMM calibration state machine driven by key codes 0, 2, 0x0E, 0x0F, 0x13, 0x14:
+runs self-inspection (cmd 2, 0xA0), then 100mV / 100mA / temperature calibration stages via
+zw_dmm_send_cmd and frontend modes, showing prompts; marks settings[0x115] when done and
+powers off at the end. Progress bytes at 0x200045A4/0x200045B0/0x200045D9."
+0x801f8ac,0x801f8ac,0x801fb95,718,279,zw_dmm_mode_handler,"Primary DMM input handler for DMM modes (settings[1] 1 or 7): toggles DMM on/off (events 0x18/0x58), selects measurement mode and unit, invokes zw_dmm_set_hardware_mode, and mirrors the selected mode over UART. Also manages auto-range state and warning popups."
+0x801fb9c,0x801fb9c,0x801fd09,366,142,zw_dmm_calib_mode,"Handles DMM calibration mode commands while the DMM view is open: entering via the 'c' key, saving (event 2) writes the 0x18-byte calibration block to flash at 0x08096000+0x2400, and reset (event 10) restores the 5000-count default and saves. Shows the DMM calibration and Save popups. Called from zw_dmm_update."
+0x801fd34,0x801fd34,0x801fd7f,70,33,zw_7segment_to_digit,"Converts a raw 7-segment mask from the DMM display (bit0=a .. bit6=g) to ASCII:
+06->'1', 5B->'2', 4F->'3', 66->'4', 6D->'5', 7D->'6', 07->'7', 7F->'8', 6F->'9';
+special codes 31/50->'r', 38->'L', 39->'C', 79->'E'; 00->0xFF (blank), unknown->0."
+0x801fd80,0x801fd80,0x8020217,1094,355,zw_dmm_parse_rx_packet,"Decodes raw DMM measurement packets (header 5A A5). The 10-byte frame carries five
+7-segment digit masks and unit/mode flag bytes; the routine converts the masks to digits,
+extracts decimal-point position, AC/DC/auto and unit prefixes (K/M/m/n/u), then updates
+the DMM display buffers and scaled measurement value. Also used for the data shown in the
+DMM view and for calibration readings."
+0x8020220,0x8020220,0x80206c7,1130,449,zw_dmm_modes_menu_ui,"Redraws the DMM mode-selection grid: four columns by three rows of icons covering V/mV DC and AC, A/mA DC and AC, resistance, continuity, diode and capacitance, plus the selection frame for the current mode. Called by zw_dmm_setup_logic and zw_dmm_update."
+0x80206c8,0x80206c8,0x8020759,146,63,zw_dmm_draw_digits_small_window,"Draws the four digits of the DMM small window at (0xc2,0x2c) using the 24x28 DMM digit
+font (color 5, transparent background). Decimal points are inserted after digits 3..0
+according to the dmm_dp_0 flags."
+0x8020770,0x8020770,0x8020891,290,120,zw_dmm_draw_window_digits,"Draws the DMM reading digits inside the small function window with the 24x28 font: minus sign, decimal points according to the active range and all four digits; special/over-range readings are delegated to zw_dmm_draw_digits_small_window. Called by zw_dmm_window."
+0x80208b4,0x80208b4,0x8020b65,690,283,zw_dmm_window,"Draws the DMM function window in the upper-right corner: range text for the active mode (DC 1000V/600mV, AC 750V/600mV, DC 10A/600mA, AC 10A/600mA) or the resistance/continuity/diode/capacitance icon, then the formatted reading via zw_dmm_draw_window_digits, plus high-voltage and ohm indicators."
+0x8020be8,0x8020be8,0x8020d3f,344,138,zw_dmm_format_special_value,"Renders special DMM values (over-range/OL, blank or invalid digits) as 40x81 glyphs and appends the same characters to the UART TX buffer: non-decimal digit codes become spaces or '-', and decimal points are inserted per the active range. Called by zw_dmm_format_measurement for readings that are not normal 4-digit values."
+0x8020d5c,0x8020d5c,0x8020f1d,450,169,zw_dmm_format_measurement,"Formats the current DMM reading into large 40x81 digit glyphs: minus sign, decimal point according to the active range, all four digits and special/over-range values via zw_dmm_format_special_value, while appending the same characters to the UART TX buffer for the remote display. Called by zw_dmm_fullscreen."
+0x8020f48,0x8020f48,0x80213ef,1084,425,zw_dmm_fullscreen,"Renders the full-screen DMM page: title bar, the formatted reading from zw_dmm_format_measurement, large unit symbols (V/mV/A/mA DC or AC, resistance, continuity, diode, capacitance) chosen by the active mode, range hints (e.g. 'Max 1000V') and battery status. Called from zw_dmm_update while the DMM view is active."
+0x8021430,0x8021430,0x8021495,102,35,zw_dmm_setup_logic,"DMM subsystem update, called from the main loop:
+- if the modes-menu flag is set, draws the DMM modes menu at the current selection;
+- when the DMM is enabled, no menu is open and settings[1] != 5, parses a received packet when the
+  RX buffer starts with 'Z',0xA5 (zw_dmm_parse_rx_packet);
+- when the DMM window is not already shown and no menu is open, opens it (zw_dmm_window)."
+0x80214a8,0x80214a8,0x8021659,434,160,zw_dmm_update,"DMM view update: redraws the full-screen or menu DMM page, parses the 10-byte 0x5AA5 measurement packet from UART4 when present, refreshes the battery icon, and dispatches factory-calibration and calibration sub-modes plus the jack image. Called from main and zw_dmm_calibration."
+0x802169c,0x802169c,0x802191b,640,214,zw_dmm_calibration,"Interactive DMM calibration routine called from main: prompts for DCV 5.000V, resistance 100.0k, DCA and DCmA reference points, averages the DMM readings until the operator confirms each point, builds the 0x30-byte calibration block and writes it to flash at 0x08096000+0x2400."
+0x802194c,0x802194c,0x802197f,52,22,zw_voice_uart_init_hw,"Initialize the voice module's UART: instance 0x1000 (the third UART mapped on PA13), baud
+rate 9600 (0x2580), 8 data bits configuration 3, then HAL_UART_Init and HAL_UART_Receive_IT into
+the module's RX buffer (10-byte protocol frame)."
+0x8021988,0x8021988,0x80219c7,64,26,zw_voice_module_power_control_hw,"Control power to the voice-recognition module on PA14 (mask 0x4000): when param!=0,
+configures PA14 as an output and drives it low (active-low enable); when param==0, restores PA14
+to an input (module unpowered/high-Z)."
+0x80219cc,0x80219cc,0x80219ed,34,11,zw_voice_control_init,"Initialize the voice-command module. If settings[0x110] is 0, powers the module through
+zw_voice_module_power_control_hw() (no forced state) and initializes its UART; otherwise calls
+zw_voice_module_power_control_hw(1) to force power on first, then the same UART init."
+0x80219f4,0x80219f4,0x8021fbf,1426,519,zw_voice_control,"Voice-recognition module handler (separate UART). Command 0x55 toggles voice control (settings[0x110], with Voice ON/OFF popup). While enabled, an 0xA1-prefixed frame is decoded into a key action: 0x88 power off, 0x10-0x15 run/single/X-Y/back, 0x20/0x21 coupling, 0x32 trigger source, 0x40/0x41 menu/view, 0x43 generator, 0x45 50%, 0x46 CH2, 0x50-0x57 scope controls, 0x60-0x66 DMM modes. Returns the key code to the main UI loop."
+0x8021ffc,0x8021ffc,0x802200d,18,6,zw_voice_timer_start,"Arm the voice-control polling timer: sets a 200 ms one-shot timer (zw_timer_us). The main
+loop later checks it to poll the voice/command front-end."
+0x8022014,0x8022014,0x80222bb,680,237,zw_auto_setup_step_ch1_vertical,"One step of the AUTO-set vertical routine for CH1: selects non-interleaved CH1 sampling, samples CH1 min/max via zw_fpga_read_adc_values, converts the levels through the vertical gain table indexed by settings[0x42], and chooses the scale/offset that centers the trace. Returns 0 while waiting or when the step completes; called from zw_auto_setup_handler."
+0x80222e8,0x80222e8,0x80225cd,742,275,zw_auto_setup_step_ch2_vertical,"One step of the AUTO-set vertical routine for CH2: enables ADC interleave, samples CH2 min/max through zw_fpga_read_adc_values, converts the levels through the vertical gain table indexed by settings[0x80], and selects the scale/offset that centers the trace. Returns 0 while waiting or when the step completes; called from zw_auto_setup_handler."
+0x8022610,0x8022610,0x8022707,248,96,zw_auto_setup_step_ch1_horizontal,"Auto-setup horizontal step for CH1.
+State 0 saves the current trigger mode/source, forces source 0 / mode 1 with a preset auto
+trigger level, programs the trigger, disables ADC interleave and starts a 200 ms timer.
+State 1 reads the FPGA edge count after the timer expires, restores the trigger mode, then
+selects a time-base index: <2 edges restores the previous setting and uses index 0x0e,
+otherwise it scans the time-base table at DAT_08022720 for the fastest base able to capture
+the measured edge rate and applies it via zw_scope_update_hardware_check(0xff)."
+0x8022734,0x8022734,0x802281b,232,89,zw_auto_setup_step_ch2_horizontal,"Auto-setup horizontal step for CH2 (same sequence as the CH1 variant).
+State 0 saves trigger mode/source, forces source 1 / mode 1 with a preset auto trigger
+level, enables ADC interleave and starts a 200 ms timer. State 1 reads the FPGA edge count,
+restores the trigger mode and, when more than one edge was seen, scans the time-base table
+to pick a suitable time base (0x03..0x17) and applies it via
+zw_scope_update_hardware_check(0xff)."
+0x8022848,0x8022848,0x8022b9f,746,294,zw_auto_setup_handler,"AUTO-set state machine, called from main. While settings[1]==4 it arms the FPGA/ADC interleave, reads CH1 and CH2 levels, centers the traces, runs the vertical steps for CH1/CH2 and the horizontal timebase step, and finally computes auto trigger levels. Event 0x60 starts AUTO, event 0x20 aborts; shows an AUTO status popup."
+0x8022ba4,0x8022ba4,0x80233e5,2016,765,zw_personalization_menu_handler,"Input handler for the personalization menu (settings page 8). Scrolls a 13-entry option list with up/down and fast-scroll events, redraws the preview page on open (event 0x7F), applies color/theme, LCD invert and backlight choices, and repaints the affected screen regions using the indexed framebuffer and image elements. param_1 is the key/event code."
+0x80233e8,0x80233e8,0x80234bf,216,74,zw_scope_fetch_samples_for_persistence,"Fetches the samples used for the persistence (afterglow) display.
+Computes the circular start offset like zw_fpga_set_data_read_params (doubled for
+interleaved dual channel), derives the sample count from the cursor span times the sample
+density settings+0x00, splits large captures into ceil(n/6000) equal chunks, stores the
+resulting sample interval in a global, and reads CH1 (and CH2 in dual mode) from FPGA
+memory in those chunks through zw_fpga_read_data_from_memory. A state byte is then copied
+within the persistence UI buffer at +0x76e/+0x76f."
+0x80234d4,0x80234d4,0x8023631,350,113,zw_scope_process_grayscale_persistence,"Builds the grayscale persistence histogram for the current capture: updates a 300x200 hit-count array from the trace buffers, tracks the illumination range and color mapping, and hands the result to zw_scope_draw_grayscale_trace. Called from zw_scope_prepare_display_data when grayscale persistence is enabled (settings[0xE6])."
+0x802364c,0x802364c,0x80236cb,128,41,zw_scope_draw_grayscale_trace,"Grayscale persistence pass: for each column in the cursor range and each of the 200 rows,
+adds the per-pixel persistence accumulator (buffer300_a) scaled by a brightness factor
+(0x40 / intensity, recomputed each frame) to the framebuffer, saturating at 0x60. Only
+nonzero accumulator pixels are touched."
+0x80236dc,0x80236dc,0x80239bb,736,262,zw_siggen_waveform_gen,"Build the 256-sample DAC table for the selected signal-generator waveform (0 sine, 1 square, 2 triangle, 3 sawtooth, 4 half sine, 5 full-wave rectified sine, 6 sinc table, 7 noise, 0xFF off) and load it into the FPGA wave buffer."
+0x80239d0,0x80239d0,0x8023a59,138,59,zw_siggen_init,"Initializes the signal-generator UI: window element at (0x55,0x57), fullscreen frequency
+text, on/off indicator and waveform/scope icons. Applies the configured frequency/duty
+(settings+0xf0/+0xec), regenerates the waveform when enabled (settings[0xea]) and updates
+the enable control."
+0x8023a88,0x8023a88,0x8023f47,1158,469,zw_siggen_overlay_handler,"Keypad handler for the signal-generator overlay. Up/down selects the waveform index (0..8: sine, square, triangle, sawtooth, half sine, full-wave rectified, sinc, noise, off), left/right adjusts the active numeric field, and OK/event 0x7E enables the output. Frequency range (Hz/kHz/MHz) is recomputed from settings +0xF0 into the display globals; edits are applied through zw_siggen_freq_duty and zw_siggen_waveform_gen."
+0x8023f54,0x8023f54,0x80241bd,618,240,zw_scope_siggen_window,"Draws the small signal-generator status window in the normal scope view: waveform icon, 7-segment frequency digits with the active digit highlighted, and the output-on indicator. Visible when settings[0x121] bit 2 is set; called from zw_scope_ui_refresh and zw_scope_redraw_frame."
+0x8024208,0x8024208,0x8024763,1318,514,zw_siggen_key_handler,"Signal-generator key handling: change waveform, frequency, amplitude and on/off state, update the generator display and reload the DAC table when the waveform changes."
+0x8024774,0x8024774,0x8024b67,932,351,zw_siggen_fullscreen,"Renders the fullscreen signal-generator page when settings[0x12D] is enabled: clears the 8-bpp framebuffer, draws title, battery status, waveform icon, frequency in 32x53 digits, duty cycle in 7-segment digits and amplitude/offset fields with the selected-field highlight. Called from main."
+0x8024b68,0x8024b68,0x8024bb9,82,32,zw_measurement_ui_init,"Initialize the measurement UI state: sets the 1,000,000 base scale, zero value, display
+thresholds (0xd2,0x18,5,0,6), enables two state bytes, and arms the 300 ms, 1.5 s and 50 ms
+timers used by the measurement update loop."
+0x8024bcc,0x8024bcc,0x8024ecf,772,289,zw_scope_frequency_meter,"Frequency-counter mode: measure the input frequency using the FPGA/timebase and the calibrated reference, then update the on-screen frequency reading."
+0x8024f0c,0x8024f0c,0x8024f43,56,22,zw_freq_meter_calibrate_reference,Calibrate the frequency meter against the internal reference clock and store the correction factor used when converting counter values to Hz.
+0x8024f5c,0x8024f5c,0x8025029,206,77,zw_freq_meter_handler,"Frequency-counter gate handler.
+Manages menu state settings[0x116]/[0x141] (page 4 entry/exit), enables the counter gate
+(bit derived from settings[0]), programs the FPGA frequency-meter trigger levels around the
+trigger level settings+0x40, resets and periodically polls the counter via
+zw_fpga_read_counter(), storing the result in a global."
+0x802503c,0x802503c,0x80250db,160,67,zw_scope_counter,"Draws the frequency-counter popup: filled box at (0xb2,0x14), double dashed border, a
+large 'C:' label and the counter value as a 10-digit decimal (clamped to 1999999999) in
+large font. Only shown while the counter gate flag settings[0x141] is set."
+0x80250f0,0x80250f0,0x8025175,134,56,zw_afe_get_relay_settings,"Maps the requested AFE input range/impedance (10000, 20000, 40000, 100000 or 200000
+ohm; values above the limit are divided by 50) to the three relay control bytes returned
+through param_2/param_3/param_4. 10k=0,0,0; 20k=0,0,1; 40k=0,1,0; 100k=1,0,0;
+200k=1,0,1; any other value=0,1,1."
+0x802517c,0x802517c,0x802518d,18,6,zw_HAL_init,"Boot-time HAL bring-up: calls zw_HAL_msp_init (clocks/GPIO/peripherals) and arms a 20 ms
+timer used by the early startup state machine."
+0x8025194,0x8025194,0x80251df,76,28,zw_fpga_set_afe_offset_dac,"Program the AFE offset DACs: converts both inputs (20.12-style fixed point, dividing by
+the upper 12 bits after a <<12 scaling) to 12-bit values clamped at 0xFFF, then writes
+(ch1 << 12) | ch2 to FPGA SPI register 0x13."
+0x80251e4,0x80251e4,0x802527f,156,56,zw_scope_ch1_update_afe_offset,Update only the CH1 vertical offset DAC (AFE serial word) without reconfiguring the relays.
+0x8025290,0x8025290,0x80252db,76,28,zw_scope_ch1_afe_init,Configure the CH1 analog front end for the current V/div and coupling: program attenuation relays and the offset DAC through the 24-bit bit-bang serial interface.
+0x80252e4,0x80252e4,0x802538b,168,58,zw_scope_ch2_update_afe_offset,Update only the CH2 vertical offset DAC (AFE serial word) without reconfiguring the relays.
+0x802539c,0x802539c,0x80253df,68,23,zw_scope_ch2_afe_init,Configure the CH2 analog front end for the current V/div and coupling: program attenuation relays and the offset DAC through the 24-bit bit-bang serial interface.
+0x80253e8,0x80253e8,0x80253f9,18,6,HAL_FLASH_Read_Offset_0x96000,"Reads len bytes from serial flash at absolute address 0x08096000 + offset into buf.
+Persistent layout: +0x0000 factory/UUID record, +0x1000 settings, +0x2000 scope
+calibration, +0x2400 DMM calibration, +0x29000 screenshot index,
++0x2A000..+0x497FF screenshot records (63 x 0x800)."
+0x80253fc,0x80253fc,0x802540d,18,6,HAL_FLASH_Write_Offset_0x96000,Writes a buffer to flash storage at 0x08096000 + offset. Storage map: +0x0000 factory/UUID (0x40); +0x1000 settings (0x400); +0x2000 scope calibration (0x8E); +0x2400 DMM calibration (0x18); +0x29000 screenshot index (0x88); +0x2A000..+0x497FF screenshot images (63 x 0x800).
+0x8025410,0x8025410,0x8025481,114,49,low_level_init,Early GPIO/ADC/timer initialization.
+0x80254a0,0x80254a0,0x80254b9,26,9,zw_lcd_backlight_enable_hw,"Switch the LCD backlight enable line: drives PB27 (GPIOB bit 27, mask 0x08000000) high
+when param != 0 and low when param == 0. Brightness is set separately by zw_lcd_set_pwm."
+0x80254c0,0x80254c0,0x802564d,398,155,zw_battery_monitor,"Battery monitor: samples the battery voltage through the ADC every ~0.5 s, accumulates and averages readings, updates the battery icon, logs the value, periodically saves settings, and powers the instrument off below the low-battery threshold. Also samples the charge-detect GPIO. Called from main, zw_dmm_update and zw_siggen_fullscreen."
+0x8025680,0x8025680,0x80256db,92,38,zw_draw_battery_icon_overlay,"Battery icon overlay. Uses the blink counter at 0x080256dc and the battery level at 0x080256e0. First erases the surrounding rectangle (0x122,4, 0x16x8). When the level is 2 (charging) the inner bar is alternately erased/filled from the counter bit 3 to create the blinking effect; otherwise it draws the battery frame at (0x123,5) size 0x11x6 and fills a bar whose width equals the level, using the colour word at 0x080256e4."
+0x80256e8,0x80256e8,0x80256fb,20,8,zw_gpio_PA6_read_hw,"Read the PA6 key-matrix row: returns 3 when PA6 (GPIOA bit 6) is high, 0 otherwise. Called
+by zw_keypress_scan/zw_keypress_handler when folding the third row into a key code."
+0x8025700,0x8025700,0x8025717,24,11,zw_gpio_PA6_input,"Reconfigure PA6 as an input: zw_gpio_init_hw(GPIOA, mask 0x40, pull=0, mode=2). Keeps the
+key-matrix row readable after it was temporarily driven."
+0x802571c,0x802571c,0x8025793,120,42,zw_afe_bitbang_write_24bit_hw,"Clock one 24-bit AFE control word out MSB-first: data on PB2, clock on PB3, latch on PA12, with a long delay between edges (about 800 cycles) to suit the slow serial AFE."
+0x802579c,0x802579c,0x8025847,172,70,zw_HAL_msp_init,"Board-level MSP init: configure and clear the AFE bit-bang pins (PB2 data, PB3 clock, PA12 latch), set up PA4/PA5, program the two timer delays (15 ms) and clock out the initial 24-bit AFE word."
+0x802585c,0x802585c,0x8025881,38,14,zw_scope_set_bandwidth_limit,"Set the 20 MHz bandwidth limit for both channels. Clears bits 6 and 15 of the cached
+24-bit AFE word, sets bit 6 (0x40) when ch1_limit_enable != 0, sets bit 15 (0x8000) when
+ch2_limit_enable != 0, and bit-bangs the word to the AFE (filter relays)."
+0x8025888,0x8025888,0x80258a9,34,13,zw_afe_set_ch1_enable_bit,"Set/clear the CH1 AFE enable bit: param!=0 clears bit 7 (0x80) of the cached 24-bit AFE
+control word, param==0 sets it, then pushes the word with zw_afe_bitbang_write_24bit_hw.
+The bit is an active-low inhibit for the CH1 front-end."
+0x80258b0,0x80258b0,0x80258ed,62,27,zw_afe_pack_ch1_config,"Pack the CH1 analog front-end configuration into the 24-bit bit-banged word: the four config bytes are shifted into bits 1-4 of the word and the auxiliary bit into bit 5, preserving the other bits (~0x3E mask cleared first), then the word is clocked out to the AFE."
+0x80258f4,0x80258f4,0x8025933,64,27,zw_afe_pack_ch2_config,"Pack the CH2 analog front-end configuration into the 24-bit bit-banged word: the four config bytes occupy bits 9-12 and the auxiliary bit bit 13, preserving the other fields (~0x3E00 mask cleared first), then the word is clocked out to the AFE."
+0x8025938,0x8025938,0x8025959,34,13,zw_afe_set_ch2_enable_bit,"Set/clear the CH2 AFE enable bit: param==0 clears bit 10 (0x400) of the cached 24-bit
+AFE control word, param!=0 sets it, then pushes the word with zw_afe_bitbang_write_24bit_hw.
+Opposite polarity to the CH1 enable helper: here 1 = enabled."
+0x8025960,0x8025960,0x80259b3,84,29,zw_power_off,"Controlled shutdown: save settings unless disabled, reset the AFE word, disable backlight and PWM, fill the LCD black and flush it, then cut power with zw_system_power_control(0) and hang until the next power-on/reset."
+0x80259b8,0x80259b8,0x80259c7,16,6,check_power_button_status,"Return the power-button state: bit 21 (PB21) of the GPIOB data register; 1 = pressed/active.
+Polled at boot to detect the power-on press and later the release."
+0x80259cc,0x80259cc,0x8025a65,154,58,zw_keypress_scan,"Scans the front-panel key matrix.
+Asserts the scan pattern through the AFE 24-bit bit-bang interface for each of 8 columns and
+reads the row lines PA5, PA4 and PA6. Returns 0 when no key is pressed, otherwise
+key code = 2 + column + row_offset with offsets 0 (PA5), 8 (PA4) and 16 (PA6)."
+0x8025a70,0x8025a70,0x8025c21,434,174,zw_keypress_handler,"Keypad dispatch: translate scanned key events into scope, DMM, siggen and menu actions, track short/long-press flags and request the corresponding UI updates."
+0x8025c54,0x8025c54,0x8025d1f,204,87,zw_power_button_logic_handler,"Power-key state machine sampled by the key timer: debounce the power button, distinguish a short press from a long hold (>30 ticks), inject key 0x81 and run the on/off cycle on a long hold."
+0x8025d34,0x8025d34,0x8025f11,478,167,zw_key_event_to_action,"Converts a raw keypad event into a scope action code according to the current UI state (normal view, menu, DMM, browser, zoom), handling short/long presses, RUN/STOP, menu navigation and the channel/trigger quick keys. Returns 0 when the event is consumed without an action. Called from main and zw_dmm_calibration."
+0x8025f20,0x8025f20,0x8025f3d,30,12,st7789_write_command_hw,"Send an 8-bit command to the ST7789 over the parallel bus: writes the command byte to the
+GPIOB data register (PB0-PB15 data, RS=0, CS held low by the caller), then pulses WR (PB18,
+0x40000) high and low. Used during init when the backlight is still off."
+0x8025f44,0x8025f44,0x8025f59,22,9,st7789_cs_low_hw,"Assert the ST7789 chip select (PB26 low): clears bit 26 (0x04000000) of the GPIOB data
+register 0x40011400, then refreshes the cached GPIOB output image at 0x200047a8."
+0x8025f64,0x8025f64,0x8025f71,14,5,st7789_cs_high_hw,"Deassert the ST7789 chip select (PB26 high): sets bit 26 (0x04000000) of the GPIOB data
+register 0x40011400."
+0x8025f78,0x8025f78,0x8025f8d,22,10,st7789_write_data_16bit_hw,"Writes one RGB565 pixel over the 16-bit parallel bus PB0-PB15. Preserves the upper
+GPIOB lines, drives the pixel value, then pulses WR (PB18). RS (PB22) and CS (PB26) must
+already be in the data state; used by pixel-streaming loops."
+0x8025f98,0x8025f98,0x8026251,698,275,st7789_init_sequence_hw,"Bit-bangs the ST7789 initialization sequence over the 16-bit parallel GPIOB bus: soft reset 0xFE/0xEF, MADCTL 0x36 (rotation), pixel format 0x3A, porch/gamma/power registers, inversion selection (settings[0x114]) and sleep-out/display-on, with HAL_Delay waits. Called by zw_lcd_hard_init."
+0x8026294,0x8026294,0x80262df,76,27,zw_lcd_hard_init,"Hardware bring-up of the LCD interface: configures all GPIOB ST7789 pins as outputs, waits 50 ms, drives CS/WR/RS high, waits another 10 ms, then runs the ST7789 initialisation command sequence."
+0x80262e4,0x80262e4,0x8026323,64,25,zw_lcd_set_invert_mode_hw,"Sends ST7789 display-inversion command: INVON (0x21) when arg==0, INVOFF (0x20)
+otherwise, with WR strobe; returns CS and RS high afterwards. Used by the display
+settings menu."
+0x802632c,0x802632c,0x80264c3,408,122,st7789_set_address_window_hw,"Sets the ST7789 drawing window (column/row address range) over the 16-bit parallel bus.
+Sends command 0x2A (CASET) with param_1..param_1+param_3-1, then 0x2B (RASET) with
+positionY..positionY+height-1, high byte first; each byte is clocked via GPIOB with
+WR/RS toggling (the repeated |0x400000/|0x440000 writes)."
+0x80264d0,0x80264d0,0x8026539,106,43,zw_draw_hline_indexed_hw_fast,"Fast horizontal line that bypasses the framebuffer: programs the ST7789 column/row window, issues RAMWR (0x2C) and bit-bangs each 16-bit pixel directly onto the GPIOB data register (the 0x40000 bit toggles WR)."
+0x8026548,0x8026548,0x80265b3,108,44,zw_draw_vline_indexed_hw_fast,"Fast vertical line that bypasses the framebuffer: same ST7789 window + RAMWR (0x2C) path as the fast hline, with a 1-pixel-wide, h-tall window and each pixel bit-banged straight to the panel."
+0x80265c0,0x80265c0,0x802663b,124,48,zw_lcd_fill_rect_rgb565,"Fills a rectangle with one RGB565 color: programs the address window (x, y, width,
+height) with 0x2A/0x2B, sends RAMWR (0x2C) and streams width*height identical pixels with
+WR strobes while CS is low; CS returns high after the transfer. Used for clearing and
+solid UI panels (the scope trace UI uses the indexed framebuffer path instead)."
+0x8026648,0x8026648,0x80266c9,130,50,zw_draw_bitmap,"Blits a 16bpp RGB565 image directly to the ST7789 over the parallel bus.
+Sets the address window at (param_2,param_3) with the given width/height, sends 0x2C
+(RAMWR), asserts CS low, streams width*height 16-bit pixels from imageData (each written
+twice, once with the WR strobe bit 0x40000), then deasserts CS."
+0x80266d8,0x80266d8,0x8026759,130,51,zw_draw_element_16bpp,"Blits a 16bpp image with a 2-word header (width, height at param_1[0..1]; pixels follow)
+to the ST7789 at (param_2,param_3). Sets the window, sends 0x2C, asserts CS, streams the
+pixels over the parallel bus and releases CS."
+0x8026768,0x8026768,0x80267a5,62,24,SPIFLS_Init,"Initialise the SPI instance used by the flash driver (handle at 0x400): fills the SPI handle fields, calls HAL_SPI_Init, reads the flash JEDEC ID via fls_drv_read_id and enables the flash/SPI clock (0x40000E00 |= 0x100)."
+0x80267ac,0x80267ac,0x80267e7,60,26,zw_fpga_spi_write_reg,Write one FPGA configuration register over hardware SPI: 5-byte frame of (reg & 0x7F) followed by the 32-bit value big-endian. Bit 2 of the shared SPI control word is cleared before the transfer and set afterwards.
+0x80267f0,0x80267f0,0x8026831,66,28,zw_fpga_spi_read_reg,"Read a 32-bit FPGA register over the bit-banged SPI bus: sends the register number with the read flag (reg | 0x80), receives 4 bytes, toggles SPI control bit 2 around the transfer and returns the received word with revb applied (byte order corrected)."
+0x8026840,0x8026840,0x8026885,70,29,zw_spi_read_samples_hw,"Read a block of ADC samples from the FPGA: rejects sizes above 1000, sends command 0x8A and receives Size bytes through the SPI interface."
+0x8026890,0x8026890,0x80268af,32,14,zw_spi_start_sample_transfer_hw,"Start the SPI sample-transfer engine: clears bit 2 of the SPI control register and
+transmits the single command byte 0x8a. Counterpart of zw_spi_stop_sample_transfer_hw; the
+FPGA then streams acquisition data."
+0x80268b8,0x80268b8,0x80268c9,18,7,zw_spi_receive_hw,"Receive Size bytes over the ST7789/FPGA SPI bus with a 5 s timeout: HAL_SPI_Receive(hspi,
+pData, Size, 5000). Used for FPGA register reads and panel status reads."
+0x80268d0,0x80268d0,0x80268dd,14,6,zw_spi_stop_sample_transfer_hw,"Abort the SPI sample-transfer engine: sets bit 2 of the SPI instance's control register
+(hspi->Instance->CR1), stopping any in-flight bulk transfer."
+0x80268e4,0x80268e4,0x8026e31,1296,377,zw_fft_compute,"Compute the 1024-point FFT of the displayed channel trace: convert 8-bit samples into complex bins, run the radix-2 transform and derive the magnitudes used by the FFT view."
+0x8026e44,0x8026e44,0x8026e97,84,27,zw_fft_handler,"FFT display handler: when the FFT-enable flag in the settings block (offset 0xFC) is set, calls zw_fft_compute on the current acquisition buffer and maps/normalises the first 300 FFT bins into the display value range for drawing."
+0x8026eb4,0x8026eb4,0x8026f8d,218,82,zw_fft_draw_bars_visualizer,Render the FFT magnitudes as vertical bars; heights are capped at 0x95 and scaled specially according to settings[0xFC] (bar modes 2/3).
+0x8026f94,0x8026f94,0x8027005,114,38,zw_fft_draw_trace_mode,Render the FFT magnitudes as a connected trace over the graticule; used when settings[0xFC] selects trace mode 0.
+0x8027018,0x8027018,0x8027025,14,7,printf_disabled_1,Disabled printf variant 1: empty variadic stub (compiled-out diagnostic print).
+0x8027028,0x8027028,0x802703d,22,10,zw_delay_cycles_small_hw,"Short calibrated busy-wait: loops (cycles>>5) times. Used for tightly-timed bit-banging
+(e.g. AFE serial clocks) where tick-based delays are too coarse."
+0x8027040,0x8027040,0x8027057,24,11,zw_delay_cycles_large_hw,"Long calibrated busy-wait: loops (cycles*120) times. Same purpose as
+zw_delay_cycles_small_hw for microsecond-scale waits in bit-banged protocols."
+0x8027058,0x8027058,0x802706d,22,9,HAL_Delay,HAL tick-based millisecond delay: busy-waits until HAL_GetTick() advances by Delay ms.
+0x8027070,0x8027070,0x80270a7,56,21,zw_timer_us,"Software timer helper in microseconds: rounds the requested period up to whole milliseconds with a minimum of 1 ms, samples HAL_GetTick and stores {last_tick, period_ms} in the two-word timer state."
+0x80270a8,0x80270a8,0x80270c3,28,13,zw_timer_check,"Non-blocking timer check: param_1 points to {last_tick, period_ms}. Returns 0 while
+(now - last_tick) < period; when elapsed, stores now in last_tick and returns 1. Backs all the
+periodic UI/measurement polls and the popup timeout."
+0x80270c4,0x80270c4,0x802711d,90,31,zw_list_insert_top,"Insert a 16-bit entry at the top of a fixed-capacity list (capacity at +0x80, count at +0x84, entry array at +0): shifts the existing entries one slot toward higher indices, writes the new entry at index 0 and saturates the count at capacity (oldest entry dropped when full)."
+0x8027120,0x8027120,0x8027161,66,24,zw_screenshot_delete_handler,"Delete one entry from a fixed-capacity list (capacity +0x80, count +0x84): shifts the entries after the given index down by one slot and decrements the count."
+0x8027164,0x8027164,0x8027171,14,7,printf_disabled_2,Disabled printf variant 2: empty variadic stub (compiled-out diagnostic print).
+0x8027174,0x8027174,0x8027191,30,13,FifoInit,"Initialise the global software FIFO: store buffer pointer and size and reset the read/write indices (descriptor at 0x2001DF94: +0 buffer, +4 size, +8 write index, +0xC read index). Returns 0, or -1 on null/zero arguments."
+0x8027198,0x8027198,0x80271a1,10,5,FifoDataLen,"Return the number of bytes currently queued in the UART upgrade FIFO: write index (+8) minus
+read index (+0xc) of the FIFO control block at 0x2001df94."
+0x80271a8,0x80271a8,0x80271e3,60,25,FifoRead,"Copy up to len bytes from the global software FIFO into buf, wrapping at the buffer end; returns the number of bytes actually copied (limited by available data)."
+0x80271e8,0x80271e8,0x8027229,66,28,FifoWrite,"Copy up to len bytes from buf into the global software FIFO, wrapping at the buffer end; returns the number of bytes actually stored (limited by free space)."
+0x8027230,0x8027230,0x8027239,10,5,zw_fifoInit,"Reset the UART upgrade FIFO by zeroing the write index (+8) and read index (+0xc) of the
+FIFO control block at 0x2001df94."
+0x8027240,0x8027240,0x80272ff,192,64,zw_draw_ParametrizedGlyph,"Draws a run-length-encoded glyph/icon described by param_1 (x, y, data pointer, frame
+count). The data starts with width/height, followed by (run_length, color) 16-bit pairs.
+Colors with bit 0x20 are palette-indexed: bits 11+ select the palette bank (enabled via the
+mask at param_1+6), otherwise the color is (color & 0x3ff)>>6; color 0xffdf means
+transparent. Used for large icons and UI graphics."
+0x8027304,0x8027304,0x8027389,134,44,zw_boot_logo,"Draws the boot logo, an RLE-compressed indexed bitmap, at positionX/positionY.
+Header: 16-bit width, 16-bit height, then (run_length, color) byte pairs; color 0x20 is
+transparent. Wraps to the next row when the width boundary is reached."
+0x8027390,0x8027390,0x802743d,174,58,zw_draw_element,"Draws a 1bpp bitmap element described by p_Desc (x, y, bitmap pointer, fg, bg).
+The bitmap starts with width and height bytes followed by MSB-first rows, 8 pixels per byte.
+Set bits use the foreground color p_Desc[6], clear bits the background p_Desc[7]
+(0x20 = transparent)."
+0x8027444,0x8027444,0x80274ef,172,57,zw_drawGlyph2,"Draws the set pixels of a 1bpp glyph (p_Desc: x, y, width, height, bitmap pointer,
+foreground color). Rows are MSB-first, 8 pixels per byte; background pixels are skipped,
+so the glyph is drawn transparently over existing content."
+0x80274f4,0x80274f4,0x8027593,160,51,zw_draw_glyph_indexed,"Draws an indexed 1bpp glyph described by param_1 (x, y, bitmap pointer, two colors).
+Bitmap rows are MSB-first, 8 pixels per byte. Set pixels are drawn with param_1[6] when the
+framebuffer pixel is 0, otherwise with param_1[7]; clear pixels are left untouched."
+0x8027598,0x8027598,0x80275dd,70,25,st7789_flush_framebuffer_indexed,"Push the whole 8bpp framebuffer to the LCD: sets the full-screen column/row window (320x240), issues RAMWR (0x2C) and streams every palette index converted to its 16-bit RGB565 palette entry over the bit-banged ST7789 interface."
+0x80275e8,0x80275e8,0x8027655,110,39,zw_flush_framebuffer_rect,"Blit an axis-aligned rectangle from the 8bpp indexed framebuffer to the ST7789 panel.
+Params (x, y, width, height). Programs the panel address window with x..x+width / y..y+height,
+issues RAMWR (0x2c), asserts CS, then for each row reads 320-byte-stride index bytes from the
+framebuffer and writes the corresponding 16-bit palette entries, finally deasserts CS.
+Used for partial-screen updates (popup areas, small panels) instead of a full flush."
+0x8027660,0x8027660,0x802768b,44,18,zw_draw_hline_indexed,"Draw a horizontal line of 'width' pixels into the 8bpp framebuffer at (positionX,
+positionY) with the given palette index. Row stride is 320 bytes; no clipping is performed."
+0x8027690,0x8027690,0x80276c3,52,19,zw_draw_vline_indexed,"Draw a vertical line into the 8bpp framebuffer (320-byte stride at 0x2001dfa4), writing the given palette index for h pixels starting at (x,y)."
+0x80276c8,0x80276c8,0x80276f7,48,19,zw_draw_line_horizontal_dashed,Draw a dashed horizontal line into the 8bpp framebuffer using a 3-pixels-on / 1-pixel-off pattern.
+0x80276fc,0x80276fc,0x8027727,44,16,zw_draw_line_vertical_dashed,"Draw a vertical dashed line: steps down 'height' pixels in the 8bpp framebuffer (320-byte
+stride), writing 3 pixels on and skipping every 4th (dash pattern), using the given palette index."
+0x802772c,0x802772c,0x802777f,84,28,zw_draw_rect_filled_indexed,Fill an axis-aligned rectangle in the 8bpp framebuffer with a palette index: loops rows y..y+h and writes w bytes per row at the 320-byte stride.
+0x8027784,0x8027784,0x802784b,200,63,zw_draw_rect_indexed,"Draws a rectangle outline (top, bottom, left and right edges; no fill) into the 8-bit
+framebuffer at positionX/positionY with size width x height, using palette index
+color & 0x7f."
+0x8027850,0x8027850,0x8027da5,1358,426,zw_draw_dashed_rect_indexed,"Draws a dashed rectangle directly into the 8-bpp framebuffer (0x2001DFA4). Horizontal and vertical runs use a 5-on/1-off dash pattern (6-pixel period) and palette indices 2,6,3,4,7; width and height are in pixels. Used to frame cursor and frequency/period marker boxes."
+0x8027da8,0x8027da8,0x8027eff,344,117,zw_scope_ui_refresh,"Top-level oscilloscope UI refresh, called from main and the screenshot viewer. Clears or fades the framebuffer according to the persistence/decay settings, then draws the frame, saved waveform, traces/persistence, math trace, channel-level markers, trigger markers, measurement labels, FFT, frequency meter/counter, menus, math-roll panel, signal-generator window, cursor box and DMM setup."
+0x8027f1c,0x8027f1c,0x8027fe7,204,60,zw_scope_draw_trace_xy_mode_hw_fb,"XY-mode trace rendering.
+Computes the sample count from the density settings+0x00, fetches the samples (or the
+interpolated traces when settings[0xdf] is set), then plots palette index 5 for each sample
+pair: CH1 sample -> x = sample+0x20 (clamped 0x3c..0x104), CH2 sample -> y = 0xf8-sample
+(clamped 0x12..0xda)."
+0x8027ff8,0x8027ff8,0x802806d,118,41,zw_scope_redraw_frame,"Master scope frame redraw: clears the 320x240 framebuffer (76800 bytes) with the given colour and rebuilds the whole screen: XY plot UI, traces, channel/trigger indicators, menus, signal-generator window, trigger icons, temporary message box and the Shift/RTAuto status labels, then flushes the result to the panel."
+0x8028080,0x8028080,0x802821b,412,132,zw_debug_dump,"Debug dump of the sampled waveforms over the debug UART.
+Returns early while the scope is running (settings[0xdc] set and no menu). Calls
+zw_system_power_control(0), then either regenerates the interpolated traces and prints 300
+samples of CH1 (and CH2 in dual mode) with wm_printf(""%d ""), or walks the capture in
+blocks of 3000 samples (up to 60000) using zw_scope_fetch_samples_generic and prints them
+the same way. Development-only signal inspection aid."
+0x8028244,0x8028244,0x80282e1,158,55,zw_IntToStr,"Converts an unsigned integer (< 10000) to decimal ASCII without leading zeros and returns
+the number of digits (1..4). Used by the UI for small numeric labels."
+0x80282e4,0x80282e4,0x80283af,204,68,zw_draw_string_small,"Draws a string with the small EN bitmap font (13 bytes per glyph, 13 rows tall, 8 pixels
+wide; '.' is 4 pixels). Glyph bitmaps come from the fonts_small_EN table at (c-0x20)*0xd
+and are written into the 8-bit framebuffer; backgroundColor 0x20 means transparent.
+Returns the advanced X coordinate."
+0x80283b8,0x80283b8,0x802848d,214,70,zw_draw_string_large,"Draws a string with the large EN bitmap font (32 bytes per glyph, 16 rows tall, 10 pixels
+wide; '.' is 4 pixels). Glyph bitmaps are fetched from the fonts_large_EN table at
+(c-0x20)*0x20 and written into the 8-bit framebuffer; backgroundColor 0x20 means
+transparent. Returns the advanced X coordinate."
+0x8028498,0x8028498,0x80284fd,102,41,zw_draw_string_large_integer,"Draw a large-font integer for the UI: accepts values below 10000 with at most 4 digits, converts them with IntToStr, renders them via draw_string_large and returns the advance width (10 pixels per digit, truncated to 8 bits)."
+0x8028500,0x8028500,0x80285d5,214,65,zw_siggen_7-segment_digits,"Draws one 7-segment-style digit for the signal-generator window.
+Uses the large (19x27 px, 0x51 bytes/glyph) or small (10x14 px, 0x1c bytes/glyph) digit
+bitmap font selected by param_6, at x=param_2, y=param_3, with foreground color param_4 and
+background param_5 (0x20 = transparent)."
+0x80285e4,0x80285e4,0x80286dd,250,104,zw_format_frequency_with_unit_str,"Formats an unsigned 64-bit frequency (param_2 = low word, param_3 = high word) and stores
+a 3-character unit string (' Hz', 'kHz', 'MHz' or 'GHz') in param_1. Thresholds are
+1000 Hz, 1 MHz and 1 GHz; the scaled value is returned as a double via
+__floatundidf/__divdf3."
+0x8028700,0x8028700,0x80289a5,678,254,zw_format_value_with_unit_generic_str,"Formats a signed 64-bit value into a compact 3-character engineering-notation string (e.g. 'Hz', 'mHz', 'uHz', 'kH'...) with a unit-class selector param_4 (1 = frequency/time, 3 = volts) and threshold-based rounding. Writes the suffix bytes to param_1; used by zw_scope_int_values for measurement labels."
+0x80289c4,0x80289c4,0x8028c17,596,214,zw_scope_int_values,"Formats and draws a numeric value with an engineering-unit suffix at pixel position (param_3, param_4). Selects the frequency-specific or generic formatter, applies decimal scaling from param_5, uses the large or small font (param_6) and returns the drawn width. Used by measurement labels, channel icons, cursor readouts and temporary messages."
+0x8028c24,0x8028c24,0x8028c5b,56,20,zw_draw_CN,Render one Chinese UI glyph: looks up the 0x18-byte glyph descriptor for the character and blits it with zw_drawGlyph2.
+0x8028c60,0x8028c60,0x8028cfd,158,61,zw_dmm_chars_24x28,"Draws one DMM small-font glyph at (param_2,param_3) with foreground param_4 and
+background param_5 (0x20 = transparent), using the 24x28 digit font (0x54 bytes/glyph).
+'.' is 8 px wide; '-'/'L'/'E'/'r'/'C' use dedicated bitmaps; glyph 0xff is blank.
+Returns the next X coordinate (x + width + 2)."
+0x8028d1c,0x8028d1c,0x8028dbb,160,61,zw_dmm_chars_40x81,"Draws one DMM large-font glyph at (param_2,param_3) with foreground param_4 and
+background param_5 (0x20 = transparent), using the 40x81 digit font (0x195 bytes/glyph).
+'.' is 0x14 px wide; '-'/'L'/'E'/'r'/'C' use dedicated bitmaps; 0xff is blank.
+Returns the next X coordinate (x + width + 2)."
+0x8028dd8,0x8028dd8,0x8028e3b,100,37,zw_siggen_chars_32x53,"Render the signal-generator UI character set (32x53 pixel glyphs, 0xD4 bytes per glyph). The '.' is a special narrow glyph 0x12 pixels wide; returns the x coordinate after the glyph for continued drawing."
+0x8028e44,0x8028e44,0x8028ef9,182,79,zw_scope_active_channel_icon-Math_label,"Updates the active-channel indicator icon below the grid.
+Tracks settings[0x11e] (0=CH1, 1=CH2, 2=Math) with a 30-frame redraw hold. Draws the
+channel-switch icons in the active channel's color (0x3f for CH1, 0x5f for CH2), or clears
+the area and draws the small 'Math' label in math mode."
+0x8028f18,0x8028f18,0x80290f3,476,156,zw_scope_icons_init,"Initializes the descriptor table for the persistent UI elements (channel-level markers and up/down/right arrows): fills x/y position, image pointer, palette index and masks. Called once from zw_ui_all_init; the descriptors are later moved by zw_scope_draw_channel_level and the menu renderer."
+0x8029170,0x8029170,0x802925f,240,86,zw_ui_all_init,"Initialise the scope UI: three element/timer descriptors (timeouts 500/500/200000, element IDs 0x19/0xD9/0x87), build the CH2 colour gradient for the selected palette mode (settings[0x112]), initialise the status icons and clear the framebuffer."
+0x8029274,0x8029274,0x80293d9,358,141,zw_scope_memory_bar,"Draws the acquisition-memory bar above the graticule: converts the visible window and total capture depth through zw_calculate_float_div_and_scale and the time/div settings, clamps the segment to the 0x60-px bar starting at x=0x70 and renders the highlighted window. Called from zw_scope_fullscreen and the XY-mode UI."
+0x80293e8,0x80293e8,0x8029587,416,158,zw_scope_grid,"Draws the scope graticule into the 8-bpp framebuffer as a dotted grid with 25-pixel spacing (5-pixel dot pitch), choosing dotted/dashed style from settings[0x111] and handling the split-screen and zoom layouts from settings[0x10C]/[0x135]. Called by zw_scope_fullscreen."
+0x80295bc,0x80295bc,0x8029653,152,61,zw_scope_draw_zoom_window_overlay_hw_fb,"Draws the zoom-window overlay: computes the zoomed window start/end columns from the saved
+zoom time base (settings[0x134]) and the roll offset settings+0x138/+0x13c, then fills the
+two regions outside the window (rows 0x12..0x82) to dim the non-zoomed part of the trace."
+0x8029668,0x8029668,0x80296af,72,32,zw_scope_draw_zoom_window_borders_hw_fb,Draw the 2-pixel-wide zoom-window borders around the current zoom positions: vertical separator lines using palette colours 10 and 0x0C on the framebuffer.
+0x80296b8,0x80296b8,0x802987d,454,176,zw_scope_draw_channel_level,"Positions the CH1/CH2 channel-level markers (edge arrows) from the vertical offsets in settings +0x48/+0x88, taking the zoom/split-screen mode settings[0x135] into account and clamping the markers to the plot area. Called from zw_scope_ui_refresh."
+0x8029890,0x8029890,0x8029975,230,90,zw_scope_draw_trigger_level_ui,"Draws the trigger-level indicator line, with a 20-frame fade-out timer kept in a global.
+Maps the trigger level settings+0x40 (ADC units) to a screen row, clamps it to the display
+area, selects palette 0x3f/0x5f based on settings[0x38], stores the row in the trigger UI
+element and draws the line plus the trigger element."
+0x8029988,0x8029988,0x8029a2f,168,59,zw_scope_draw_horizontal_trigger_icon,"Draws the horizontal trigger-position icon at the top of the waveform grid.
+Converts the trigger time offset (settings+0x1c minus +0x24, scaled by 25) into grid
+columns using the sample rate settings+0x14, then places the 'T' icon at the left edge
+(10), the right edge (0x136-width) or an arrow at the offset position (0xa0 + offset -
+width/2). Skipped in XY mode."
+0x8029a44,0x8029a44,0x8029c93,592,246,zw_scope_icons-channel_modes,"Draws the CH1/CH2 status icons for the normal and XY fullscreen views: channel-enable colors, V/div reading via zw_scope_int_values, AC/DC coupling icon, 1X/10X/100X probe text and the CH2 block when dual-channel mode is active. Called from zw_scope_fullscreen and zw_scope_XY_mode_fullscreen_ui."
+0x8029cf4,0x8029cf4,0x8029d37,68,21,zw_scope_fullscreen,"Full-screen scope overlay: when the zoom-window enable flag (settings offset 0x135) is set draws the zoom overlay and borders, then the graticule/grid, channel and trigger icons, the math label, the memory-usage bar and the battery icon."
+0x8029d40,0x8029d40,0x8029dcd,142,59,zw_scope_draw_xy_mode_indicators_hw_fb,"Draws the XY-mode position indicators: places the right-arrow element from the CH1
+vertical offset settings+0x88 and the down-arrow element from the CH2 offset settings+0x48,
+clamping both to the display area, then draws them."
+0x8029ddc,0x8029ddc,0x8029eed,274,109,zw_scope_XY_grid,"Draws the XY-mode grid.
+settings[0x10c] enables the grid and settings[0x111] selects the style (0=dots, 1=dashed,
+2=solid), mapping to palette indices 0/10/11/12. Grid lines are drawn every 5 or 25
+pixels into the primary and overlay framebuffers (two 320x240 views at different bases)."
+0x8029f14,0x8029f14,0x8029f3b,40,13,zw_scope_XY_mode_fullscreen_ui,"Draw the full-screen UI for X-Y mode: XY grid (style 0xb), channel-mode icons, the
+Math label when a math channel is enabled (settings[2]), the memory/sample bar, and the
+battery indicator with fill overlay."
+0x8029f44,0x8029f44,0x8029f51,14,5,zw_draw_battery_ui_hw_fb,"Draw the battery indicator: renders the battery UI element (icon frame) then the fill-level
+overlay via zw_draw_battery_icon_overlay."
+0x8029f58,0x8029f58,0x802a015,190,73,zw_scope_menu_cn_init,"Initializes the Chinese scope-menu UI element table: the menu background bitmap at
+(250,41), the measurements/trigger/display/settings icons at their screen positions, and
+the up/left arrow indicators, setting each element's colors and clearing the associated
+state globals."
+0x802a060,0x802a060,0x802a13d,222,97,zw_scope_ch1_measurements_menu,"CH1 measurements menu.
+Maintains selection index DAT_0802a140 over 15 rows. Key 4/3 move down/up within a column;
+keys 0x13/0xb move between the two columns (4 rows apart, wrapping between rows 3 and
+0xb). Key 2 toggles the measurement-enable bit (1<<index) in the mask settings+0x6c; row
+0xe is a select-all/clear-all row that saves the old mask and sets 0x7fff."
+0x802a150,0x802a150,0x802a2ad,350,143,zw_scope_calibration_menu_handler,"Handles the manual calibration menu: moves a 15-entry selection, toggles individual calibration bits in settings +0xAC (entry 14 temporarily forces 0x7FFF), and shows the corresponding popups. Called from zw_scope_menu_dispatch_logic."
+0x802a2cc,0x802a2cc,0x802a38f,186,80,zw_scope_trigger_menu_handler_ui,"Trigger-menu key handler.
+Maintains the selected row DAT_0802a308 in 0..7: keys 4/3 move down/up by one, 0x13/0xb by two,
+with wraparound at 8. Key 2 invokes the row action through the jump table at 0x08061f98
+(Ghidra could not recover the table: 'too many branches')."
+0x802a394,0x802a394,0x802a627,632,257,zw_scope_display_menu_handler_ui,"Key handler for the Display settings page: moves the 8-entry selection, toggles F-meter/Counter enables, applies CH1/CH2 20 MHz bandwidth limiting via zw_scope_set_bandwidth_limit, adjusts LCD backlight PWM (zw_lcd_set_pwm), and redraws the page. Called from zw_scope_menu_dispatch_logic."
+0x802a630,0x802a630,0x802acd7,1630,598,zw_scope_menu_state_machine,"System-settings menu state machine (menu page 3). Navigates the 9-entry settings list and executes the selected action: version popup ('v3.0.7_III'), display settings, hardware check, FPGA firmware upgrade over UART3 (zw_firmware_uart_upgrade), LCD re-init/backlight control, and power off/on sequencing. Called from zw_scope_menu_dispatch_logic."
+0x802acf8,0x802acf8,0x802adfb,248,105,zw_scope_menu_dispatch_logic,"Top-level key dispatcher for the scope menus.
+Key 6 toggles the menu/measurement bit in settings[0x121] (scope mode only) and returns
+0xff when consumed. Otherwise, while a menu is active, keys 0x0a/0x12/0x08/0x10/0x18 select
+menu page 0..4 (stored in DAT_0802adfc) and call the matching handler: 0 = CH1
+measurements menu, 1 = calibration menu UI, 2 = trigger menu UI, 3 = display menu UI,
+4 = menu state machine."
+0x802ae0c,0x802ae0c,0x802b0af,676,245,zw_scope_menu_Meas,"Draws the Measurements menu page: twelve measurement slots in a 4x3 grid (frequency, period, Vpp, Vavg, Vrms, duty cycle, pulse width, rise/fall time, etc.). param_1 selects CH1 (0) or CH2; enabled slots are highlighted with palette 0x3F/0x5F according to the bitmask at settings +0x6C (CH1) / +0xAC (CH2). Called from zw_scope_menu."
+0x802b0d0,0x802b0d0,0x802b273,420,169,zw_scope_menu_Trig,"Draws the Trigger menu page: trigger mode, slope, source (CH1/CH2), coupling and auto/normal options are highlighted according to settings +0x38..+0x3B and +0xE8. Called from zw_scope_menu."
+0x802b294,0x802b294,0x802b5df,844,357,zw_scope_menu_Disp,"Draws the Display settings menu page: F-meter and Counter ON/OFF, CH1 and CH2 20 MHz bandwidth-limit ON/OFF, and the related display options, highlighting the current selections from settings +0x116/+0x141/+0x144/+0x145. Rendered by the scope menu (zw_scope_menu)."
+0x802b61c,0x802b61c,0x802b811,502,212,zw_scope_menu_Set,"Draws the Settings menu page: the icon/title bar, the CN/EN language indicator, selection markers for the available settings entries and the highlighted item driven by settings +0xF9/+0xFB/+0xFC/+0x110. Called from zw_scope_menu."
+0x802b834,0x802b834,0x802b8e3,148,58,zw_scope_menu,"Draws the scope menu bar.
+While settings[0x121] bit 0 is set, selects the Chinese or English menu bitmap
+(settings[0xe8]), draws the background rectangle (x-1, y-1, 0x45 x 200, color 0xd), the
+menu element, and the highlighted row element at y+0x10+index*0x28. Then dispatches to the
+per-menu drawing routine via the jump table at 0x08062034 (not recovered by Ghidra)."
+0x802b8e4,0x802b8e4,0x802b8f5,18,8,zw_scope_restore_measurements_bits_logic,"Restore the CH1 measurements enable bitmask after leaving the measurement page.
+If the backup-active flag at 0x2000a1a8 is set, copies the saved mask at 0x2000a1c4 back into
+settings+0x6c (bit-per-measurement enables). The CH1 menu's key 0x0e toggles a 'show all'
+(0x7fff) mode and stores/restores this backup."
+0x802b904,0x802b904,0x802bb71,622,222,zw_scope_quick_action_handler,"Quick-action key handler for the normal scope view (settings[1]==1): CH1/CH2 on/off (event 0x56), AC/DC coupling (event 8), probe attenuation 1X/10X/100X (event 0x10), trigger mode/slope/source and cursor selection, updating settings and showing short status popups. Called from main."
+0x802bba8,0x802bba8,0x802bc25,126,49,zw_draw_popup_message,"Show a temporary on-screen text popup.
+Sets the popup-active flag (0x2000a260), arms the popup timer (0x2000a254) for time_ms*1000 us,
+then fills the shared popup descriptor (0x2000a1e4): length at +0, up to 100 text bytes at +2,
+centered x at +0x66 (160 - 5*len for even len, 155 - 10*(len>>1) for odd len), y=110 at +0x68,
+foreground color at +0x6a and background at +0x6c. The text is byte-copied (not NUL terminated)
+from the caller's string. Rendering is done by zw_ui_render_temporary_message_ui until the timer
+expires. Used throughout the UI/HAL for status and error messages."
+0x802bc38,0x802bc38,0x802bc7f,72,33,zw_ui_show_temporary_message_logic,"Show a temporary popup carrying six integer values instead of text.
+Sets popup-active (0x2000a260), arms the popup timer (0x2000a254) for param_7*1000 us, clears the
+descriptor length (0x2000a1e4)=0 and stores param_1..param_6 as six dwords at +0..+0x14 of the same
+descriptor. A zero length tells zw_ui_render_temporary_message_ui to call zw_scope_int_values with
+these six values, which formats/draws them in the popup area (message length 0 => value mode)."
+0x802bc90,0x802bc90,0x802bcf3,100,38,zw_ui_render_temporary_message_ui,"Render/expire the shared temporary popup (called from the UI loop).
+If popup-active is clear it does nothing. If the popup timer expired it clears the active flag.
+Otherwise, zero length => zw_scope_int_values(6 stored dwords); non-zero length => zw_draw_string_large
+of the stored text with stored x/y and fg/bg colors. The display is flushed by the caller."
+0x802bd04,0x802bd04,0x802be35,290,117,zw_math_roll_menu_handler,"Key handler for the Math/Roll menu overlay (settings[0x121] bit 5): event 0x86 opens/closes the panel, event 0x94 toggles the roll mode, up/down selects the math operation and OK commits settings[0x148]/[0x149]. Called from main; returns 0xFF when the event is consumed."
+0x802be3c,0x802be3c,0x802bfc1,390,152,zw_scope_menu_math-roll,Draws the Math/Roll overlay panel when settings[0x121] bit 5 is set: framed popup with highlight boxes for the math operation (settings[0x148] 1/2) and roll enable (settings[0x149]) plus the math/roll menu icons. Called from zw_scope_ui_refresh and zw_scope_redraw_frame.
+0x802bfdc,0x802bfdc,0x802c041,102,43,zw_gpio_init_hw,"Configure GPIO pin(s): enables the GPIO clock (0x40000E00 |= 0x800), maps the custom mode
+argument to the HAL init structure (1 -> Mode=2/output, 0 -> Mode=1/input, otherwise copied),
+maps the pull argument (0 -> 0x13, 1 -> 0x14, other -> 0x12), fills Pin=mask and calls
+HAL_GPIO_Init. Used everywhere a pin changes direction or pull."
+0x802c044,0x802c044,0x802c04b,8,4,zw_set_bits,Atomically-ish set bits: *word |= mask. Used for peripheral register bit manipulation.
+0x802c04c,0x802c04c,0x802c055,10,4,zw_clear_bits,Clear bits: *word &= ~mask. Used for peripheral register bit manipulation.
+0x802c058,0x802c058,0x802c0e5,142,52,zw_pwm_init,"Initializes the three PWM handles on the PWM block at 0x40011E00: hpwm0 at 0x20030BE0,
+hpwm1 at 0x20030C0C and the LCD-backlight channel at 0x20030BB4, each with its prescaler,
+period and channel settings. Starts hpwm0, starts then immediately stops hpwm1, and leaves
+the backlight channel initialized but stopped until zw_lcd_set_pwm starts it."
+0x802c0f8,0x802c0f8,0x802c12f,56,24,zw_pwm_set_duty_cycle_hw,"Set a PWM duty cycle on whichever channel is requested.
+param_1 = channel, param_2 (r1) = pulse/duty value. Finds the owner of the channel by comparing
+hpwm0->Channel and hpwm1->Channel (+0x28); if neither matches, the backlight PWM handle is used.
+Calls HAL_PWM_Duty_Set(handle, channel, pulse)."
+0x802c13c,0x802c13c,0x802c161,38,17,HAL_PWM_Start_wrapper,"HAL wrapper used by battery/charge code: HAL_PWM_Start on the handle whose Channel field
+(+0x28) matches param_1; hpwm0 and hpwm1 are checked, otherwise the backlight PWM handle is used."
+0x802c170,0x802c170,0x802c195,38,17,HAL_PWM_Stop_wrapper,"HAL wrapper used by battery/charge code: HAL_PWM_Stop on the handle whose Channel field
+(+0x28) matches param_1; hpwm0 and hpwm1 are checked, otherwise the backlight PWM handle is used."
+0x802c1a4,0x802c1a4,0x802c1c5,34,13,zw_lcd_set_pwm,"LCD backlight brightness control: if the requested duty is non-zero, programs the
+backlight PWM channel (hpwm_backlight) with zw_pwm_set_duty_cycle_hw and starts it via
+HAL_PWM_Start_wrapper; duty 0 stops the channel."
+0x802c1cc,0x802c1cc,0x802c1ed,34,13,zw_pwm_control_hw,"Auxiliary PWM control (hpwm0, used for the DMM bias/charge supply): non-zero duty programs
+the channel and starts it via HAL_PWM_Start_wrapper; duty 0 stops it."
+0x802c1f4,0x802c1f4,0x802c1ff,12,5,zw_HAL_PWM_Start_wrapper,"Start hpwm1, the system power/boost converter PWM. Called by zw_system_power_control:
+passes hpwm1's channel field (handle+0x28) to HAL_PWM_Start_wrapper, which resolves it back to
+the hpwm1 handle and enables the channel."
+0x802c204,0x802c204,0x802c20f,12,5,zw_HAL_PWM_Stop_wrapper,"Stop hpwm1, the system power/boost converter PWM. Called by zw_system_power_control:
+passes hpwm1's channel field (handle+0x28) to HAL_PWM_Stop_wrapper, which resolves it back to
+the hpwm1 handle and disables the channel."
+0x802c214,0x802c214,0x802c2bf,172,65,zw_fpga_spi_write_buf,"Transmit one bootloader data frame on UART3: length field (len-1 as one byte for len<=0x100, otherwise two bytes), payload, then XOR checksum over the length and payload bytes. Called with data=NULL to emit a bare length header for read requests."
+0x802c2c4,0x802c2c4,0x802c2f5,50,21,zw_gpio_init_uart_pins_hw_setup,Configure the extra GPIOA lines used by the UART firmware-upgrade path: PA15 (mask 0x8000) as input and PA11 (mask 0x800) as output via zw_gpio_init_hw.
+0x802c2fc,0x802c2fc,0x802c333,56,24,zw_uart_init_with_fifo_hw_setup,Configure UART3 for the FPGA bridge bootloader (pins/baud and RX interrupt) and initialise the software FIFO descriptor at 0x2001DF94 with buffer 0x2001BB30.
+0x802c344,0x802c344,0x802c37f,60,27,zw_uart_rx_interrupt_handler_logic,"Shared UART IRQ logic for UART1's interrupt: services the UART3 FPGA link (push RX bytes into the software FIFO and kick the bootloader watchdog), UART4 DMM frames and the voice-control UART. Called from UART1_IRQHandler."
+0x802c388,0x802c388,0x802c3cd,70,24,zw_fpga_spi_cmd_done,"Wait for the 'y' (0x79) ACK from the FPGA bridge bootloader on UART3. Polls huart3_fpga for a received byte, retrying for roughly the requested number of iterations, and returns non-zero when the ACK is seen, 0 on timeout. Used after bootloader commands and data packets."
+0x802c3d0,0x802c3d0,0x802c419,74,27,zw_uart_sync_and_handshake_bootloader,"Send the 0x7F sync byte on UART3 and wait for the 'y' reply so the bridge MCU enters its command bootloader. Returns non-zero on success. This link is UART3 (huart3_fpga), not SPI."
+0x802c420,0x802c420,0x802c445,38,15,zw_fpga_spi_cmd_wait,"Send a one-byte bootloader command on UART3 followed by its bitwise complement, then wait for the 'y' ACK (up to 500 retries with delays). Used for command-only operations such as read/write/erase; returns non-zero on success."
+0x802c450,0x802c450,0x802c491,66,24,zw_fpga_spi_set_addr,"Program the bootloader flash address: command 0x21, a 4-byte address and an XOR checksum, then wait for the ACK. Subsequent read, write and erase commands act on this address."
+0x802c498,0x802c498,0x802c53d,166,58,zw_uart_send_data_packet_bootloader,"Send the 0x44 data-packet command to the bootloader, stream the length/payload/checksum frame via zw_fpga_spi_write_buf, and wait for the 'y' ACK. Returns non-zero on success."
+0x802c544,0x802c544,0x802c55f,28,11,zw_fpga_spi_set_flash_addr_safe_hw,"Send command 0x21 to the FPGA bootloader and, on success, program the flash address pointer via zw_fpga_spi_set_addr. Safe wrapper used before a page access."
+0x802c564,0x802c564,0x802c58d,42,16,zw_fpga_spi_write_packet_and_wait_hw,"Send bootloader command 0x44 (data packet), transmit one length/payload/checksum packet and wait for the completion ACK; the wait timeout scales with packet length. Returns non-zero on success."
+0x802c590,0x802c590,0x802c5ed,94,36,zw_fpga_write_flash_page,"Write up to one block at a flash address through the bootloader: command 0x31 for <=0x100 bytes or 0x33 for larger blocks, program the address, optionally issue command 0 depending on a flash-config byte, stream the payload with zw_fpga_spi_write_buf and wait for the ACK (timeout scales with length)."
+0x802c5f8,0x802c5f8,0x802c66b,116,44,zw_fpga_spi_read_flash_page_hw,"Read a block from bootloader flash: command 0x11 for <=0x100 bytes or 0x13 for larger, program the address, send a bare length header, wait for the ACK, then collect the returned bytes from the software RX FIFO into the caller buffer."
+0x802c674,0x802c674,0x802c689,22,8,zw_fpga_spi_send_magic_A2_hw,Send magic command 0xA2 (command byte plus complement) to the FPGA bridge bootloader and wait for the 'y' ACK. Part of the upgrade-entry handshake.
+0x802c68c,0x802c68c,0x802c6a1,22,8,zw_fpga_spi_send_magic_A3_hw,"Send magic command 0xA3 (command byte plus complement) to the FPGA bridge bootloader and wait for the 'y' ACK. Used as the special erase/mode command, including the MCU cor2 image path."
+0x802c6a4,0x802c6a4,0x802c74b,168,60,zw_fpga_flash_erase,"Erase a flash range through the FPGA bridge bootloader. Rounds the range to 4 KB pages and sends a page list (page number = addr>>12, with bit 15 set on 32 KB-boundary markers) in packets of up to 255 entries via command 0x44. If addr < 0x80 (cor2 MCU image at offset 0) it instead issues magic command 0xA3. Returns 1 on success, 0 on failure."
+0x802c74c,0x802c74c,0x802c7c5,122,52,zw_fpga_verify_data_block,Verify an uploaded block by reading it back through the bootloader and comparing it against the source buffer; aborts on mismatch. Called at the end of each firmware blob upload.
+0x802c7cc,0x802c7cc,0x802c813,72,28,zw_fpga_firmware_upload_setup,"Stream a firmware blob to the bootloader in chunks of config_byte*0x100 bytes using zw_fpga_write_flash_page, then verify the written range with zw_fpga_verify_data_block. Stops early when a page write fails."
+0x802c818,0x802c818,0x802c875,94,39,zw_fpga_write_boot_header_hw_setup,Write the FPGA boot header at the start of config flash through the bootloader: first half-word 0x5AA5 magic followed by size/checksum header fields describing the payload.
+0x802c88c,0x802c88c,0x802c94b,192,71,zw_fpga_read_config_reg_hw_read,"Read an FPGA configuration register remotely through the bootloader link. Selects one of the bridge-side addresses 0x4000100C/0x40001010/0x40001014/0x4000102C/0x40001030, using the initial key value 0x8001045A, and returns the 32-bit result."
+0x802c954,0x802c954,0x802cb3f,492,160,zw_uart_bootloader_init_hw_setup,"Probe and initialise the FPGA bridge bootloader over UART3: force 115200 baud when the config byte is < 0x20, sync handshake, read the bootloader version string and set FPGA revision flags from its characters, then check byte 0 of config flash and upload fpga_firmware_0 (0x14F8 bytes) when missing/old, re-entering recursively. Called after the UART3/FIFO hardware setup."
+0x802cb64,0x802cb64,0x802cb9b,56,18,zw_fpga_reset_pulse_hw_ctl,"Pulse the FPGA bridge reset line (PA11): drive low, delay, then release high. Used to restart the bridge MCU into its bootloader/flash during upgrade."
+0x802cba0,0x802cba0,0x802cbd1,50,17,zw_uart_upgrade_prepare_hw_setup,"Prepare the hardware path for UART firmware upgrade: configures the upgrade GPIO pins, initialises the UART with FIFO settings, drives the PA15 control line, pulses the FPGA reset and waits 2 seconds before re-initialising the UART for the ROM bootloader protocol."
+0x802cbdc,0x802cbdc,0x802cbfd,34,12,zw_system_deinit_early,Early system de-init around an FPGA/MCU firmware upgrade: tear down interrupt/peripheral state and quiesce the acquisition path before the bootloader takes over the link.
+0x802cc0c,0x802cc0c,0x802cc2f,36,13,zw_fpga_flash_write_at_zero_hw_util,Write a firmware block at bootloader flash offset 0: set the address with zw_fpga_spi_set_flash_addr_safe_hw(0) and stream the data through zw_fpga_write_flash_page. Used for the cor2 MCU image loaded at 0x08000000.
+0x802cc30,0x802cc30,0x802cc4f,32,11,zw_fpga_init_upgrade_sequence_logic,"Entry point of an FPGA/MCU upgrade: initialise the UART3 bootloader link, run the sync/magic handshake and erase the target flash before uploading images."
+0x802cc54,0x802cc54,0x802cced,154,55,zw_fpga_firmware_upload,"Full FPGA/MCU firmware upgrade. Erases the config-flash window at 0x7FFF6000 (length 0xA000) and uploads fpga_firmware_1 (0xAA0 bytes), then selects by detected FPGA version: fpga_firmware_2_v1 (0x6100), fpga_firmware_3 (0x62D0) or fpga_firmware_2_v2 (0x6100) at 0x7FFF6B00. Finally erases the 0x0-0x8000 window and uploads mcu_cor2_firmware (0x3788 bytes) at offset 0."
+0x802cd18,0x802cd18,0x802cd91,122,41,zw_firmware_uart_upgrade,"Firmware UART upgrade entry point (alt boot/upgrade menu).
+Prints 'start download...', stops the watchdog, resets the UART RX fifo, then:
+1) zw_uart_upgrade_prepare_hw_setup(baudrate) - fails => 'uart download init failed', 1 s delay, return 0;
+2) zw_fpga_init_upgrade_sequence_logic() - fails => 'uart init flash failed', 1 s delay, return 0;
+3) zw_fpga_firmware_upload(firmware_version_select_) - fails => 'uart update logic failed', 1 s delay, return 0;
+On success prints 'upgrade successful' and re-arms the watchdog. Returns the last status (non-zero ok)."
+0x802cdac,0x802cdac,0x802cdd1,38,12,SystemInit,Clears VIC active/pending interrupt state.
+0x802cddc,0x802cddc,0x802ce45,106,42,trap_c,Prints the exception register frame and halts.
+0x802ce58,0x802ce58,0x802ce7d,38,15,board_init,VIC init plus UART0 console configuration.
+0x802ce88,0x802ce88,0x802ce97,16,7,_out_uart,"mpaland printf output hook for the debug UART (UART0).
+Spins until the UART0 transmit FIFO has room (status register +0x1c low 6 bits <= 0x1f), then writes
+the character to the data register (+0x20). Installed as _putchar's uart output routine."
+0x802ce9c,0x802ce9c,0x802ce9d,2,1,_out_null,"mpaland printf output hook that silently discards a character (null output); used when the
+printf backend is a no-op. Single return, no side effects."
+0x802cea0,0x802cea0,0x802cf39,154,61,_out_rev,"printf output helper: writes a reversed character buffer (least-significant digit first)
+to the output sink, inserting leading and trailing spaces per width and left-align flags;
+returns the updated output index."
+0x802cf3c,0x802cf3c,0x802d121,486,145,_ntoa_format,"printf integer helper: finishes a converted number by zero-padding to the requested
+precision, appending an optional decimal point/digit, adding sign or base prefix (0x, 0b)
+and width padding, then emitting the digits through _out_rev."
+0x802d124,0x802d124,0x802d1e3,192,56,_ntoa_long,"printf helper: converts an unsigned long to ASCII in base 10/16/8/2 (upper or lower
+case) by repeated division, then calls _ntoa_format for padding and prefixes."
+0x802d1e4,0x802d1e4,0x802d2b9,214,78,_ntoa_long_long,"printf helper: converts an unsigned 64-bit value to ASCII using __udivdi3/__umoddi3 for
+base 10/16/8/2, then calls _ntoa_format for padding and prefixes."
+0x802d2bc,0x802d2bc,0x802d74d,1136,402,_ftoa,"printf %f conversion: splits the double into integer and fraction parts, rounds to the
+requested precision, emits the integer digits and fractional digits through _out_rev, and
+falls back to _etoa for very large magnitudes. Uses the soft-float helpers."
+0x802d754,0x802d754,0x802dbdd,1102,372,_etoa,"printf %e/%g conversion: normalizes the double to d.ddd * 10^exp, rounds the mantissa
+digits and emits the exponent (sign + zero-padded digits) using _ntoa_long._out_rev."
+0x802dbe0,0x802dbe0,0x802e665,2674,933,_vsnprintf,"Core of the firmware printf implementation (mpaland-style _vsnprintf).
+Parses flags, width, precision and length modifiers from the format string and dispatches
+to _ntoa_long, _ntoa_long_long, _ftoa, _etoa and _out_rev. Backs printf/sprintf and the
+debug/log output routines."
+0x802e668,0x802e668,0x802e67d,22,9,fputc,"fputc for the newlib stdio backend: bypasses the FILE machinery and writes the character
+directly to the debug UART0, spinning while the TX FIFO is full (status +0x1c low 6 bits).
+Returns 0 unconditionally."
+0x802e684,0x802e684,0x802e6b1,46,21,wm_printf,wm_printf: W806 printf backend. Formats into a local buffer with _vsnprintf (unlimited length) and writes the result through the _out_uart character sink.
+0x802e6b8,0x802e6b8,0x802e735,126,46,vTaskSwitchContext,"FreeRTOS vTaskSwitchContext: if the scheduler is suspended sets xYieldPending and returns; otherwise clears xYieldPending, scans uxTopReadyPriority downward through pxReadyTasksLists advancing the list cursor and sets pxCurrentTCB. Calls wm_printf assertions if no ready task is found."
